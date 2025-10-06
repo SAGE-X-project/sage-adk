@@ -129,3 +129,25 @@ func NewArtifact(name, description string, parts []Part) *Artifact {
 		Metadata:    make(map[string]interface{}),
 	}
 }
+
+// AgentCard represents agent metadata and capabilities.
+type AgentCard struct {
+	ID          string
+	Name        string
+	Description string
+	Version     string
+	Capabilities []string
+	Metadata    map[string]interface{}
+}
+
+// NewAgentCard creates a new AgentCard with generated ID.
+func NewAgentCard(name, description, version string) *AgentCard {
+	return &AgentCard{
+		ID:           GenerateAgentID(),
+		Name:         name,
+		Description:  description,
+		Version:      version,
+		Capabilities: make([]string, 0),
+		Metadata:     make(map[string]interface{}),
+	}
+}
