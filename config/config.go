@@ -61,8 +61,11 @@ type ProtocolConfig struct {
 // A2AConfig contains A2A protocol settings.
 type A2AConfig struct {
 	Enabled     bool
+	ServerURL   string
 	Version     string
 	TaskTimeout time.Duration
+	Timeout     int    // Timeout in seconds
+	UserAgent   string // User-Agent header
 }
 
 // SAGEConfig contains SAGE protocol and security settings.
