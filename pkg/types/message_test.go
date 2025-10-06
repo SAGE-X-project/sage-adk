@@ -24,6 +24,28 @@ import (
 	"time"
 )
 
+func TestMessageRole_IsValid(t *testing.T) {
+	tests := []struct {
+		name  string
+		role  MessageRole
+		valid bool
+	}{
+		{"user role is valid", MessageRoleUser, true},
+		{"agent role is valid", MessageRoleAgent, true},
+		{"empty role is invalid", MessageRole(""), false},
+		{"unknown role is invalid", MessageRole("unknown"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.role.IsValid()
+			if got != tt.valid {
+				t.Errorf("IsValid() = %v, want %v", got, tt.valid)
+			}
+		})
+	}
+}
+
 func TestTextPart_GetKind(t *testing.T) {
 	part := &TextPart{
 		Kind: string(PartKindText),
