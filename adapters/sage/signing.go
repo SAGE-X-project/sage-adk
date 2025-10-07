@@ -105,8 +105,38 @@ func (sm *SigningManager) VerifySignature(message interface{}, signature *Signat
 // createSignatureBase creates the RFC 9421 signature base string.
 // This canonicalizes the message fields into a standardized format for signing.
 func (sm *SigningManager) createSignatureBase(message interface{}) (string, error) {
+	// For messages with a Signature field, we need to exclude it from the signature base
+	// Otherwise the signature would be signing itself, which is impossible
+	messageToSign := message
+
+	// Check if message has a Signature field and create a copy without it
+	switch v := message.(type) {
+	case *HandshakeRequest:
+		// Create a copy without signature
+		copy := *v
+		copy.Signature = SignatureEnvelope{}
+		messageToSign = copy
+	case *HandshakeResponse:
+		copy := *v
+		copy.Signature = SignatureEnvelope{}
+		messageToSign = copy
+	case *HandshakeComplete:
+		copy := *v
+		copy.Signature = SignatureEnvelope{}
+		messageToSign = copy
+	case HandshakeRequest:
+		v.Signature = SignatureEnvelope{}
+		messageToSign = v
+	case HandshakeResponse:
+		v.Signature = SignatureEnvelope{}
+		messageToSign = v
+	case HandshakeComplete:
+		v.Signature = SignatureEnvelope{}
+		messageToSign = v
+	}
+
 	// Serialize message to JSON with deterministic ordering
-	messageJSON, err := json.Marshal(message)
+	messageJSON, err := json.Marshal(messageToSign)
 	if err != nil {
 		return "", errors.ErrOperationFailed.
 			WithMessage("failed to marshal message").
