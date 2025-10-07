@@ -5,7 +5,7 @@
 
 ## Current Status
 
-### ✅ Phase 1: Foundation (Completed)
+###  Phase 1: Foundation (Completed)
 - [x] Core types (pkg/types)
 - [x] Error handling (pkg/errors)
 - [x] Configuration (config/)
@@ -16,12 +16,12 @@
 - [x] LLM provider interface + Mock (adapters/llm)
 - [x] Storage interface + Memory (storage/)
 
-**Test Coverage**: 90%+ ✅
-**Problem**: 동작하는 agent를 만들 수 없음 ❌
+**Test Coverage**: 90%+ 
+**Problem**: 동작하는 agent를 만들 수 없음 
 
 ---
 
-## 🎯 Phase 2A: Make It Work (Priority 0 - 2 Weeks)
+##  Phase 2A: Make It Work (Priority 0 - 2 Weeks)
 
 **Goal**: 5줄로 동작하는 AI agent 만들기
 
@@ -274,7 +274,7 @@ docs/
 
 ---
 
-## 🚀 Phase 2B: Add Intelligence (Priority 1 - 2 Weeks)
+##  Phase 2B: Add Intelligence (Priority 1 - 2 Weeks)
 
 **Goal**: LLM이 도구를 사용할 수 있게 하기 (MCP)
 
@@ -781,7 +781,7 @@ examples/orchestrator/
 
 ---
 
-## 📊 Task Priority Matrix
+##  Task Priority Matrix
 
 ### Critical Path (Blocking everything else)
 ```
@@ -834,7 +834,7 @@ graph TD
 
 ---
 
-## 🎯 Success Metrics
+##  Success Metrics
 
 ### Phase 2A Success (Week 2 End)
 - [ ] Example runs: `go run main.go` works
@@ -930,7 +930,7 @@ graph TD
 
 ---
 
-## 📝 Notes
+##  Notes
 
 ### Task Assignment Strategy
 - **Week 1-2**: Single developer, focus on quality

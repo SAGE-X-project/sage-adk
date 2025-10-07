@@ -3,39 +3,39 @@
 **Date**: 2025-10-07
 **Status**: Phase 2A Complete, Moving to Phase 2B
 
-## 📊 Overall Progress
+##  Overall Progress
 
 | Phase | Status | Tasks | Completion |
 |-------|--------|-------|------------|
-| Phase 1: Foundation | ✅ Complete | 8/8 | 100% |
-| Phase 2A: Make It Work | ✅ Complete | 6/6 | 100% |
-| Phase 2B: Add Intelligence | 🔄 In Progress | 0/6 | 0% |
-| Phase 2C: Add Security | ⏳ Planned | 0/4 | 0% |
-| Phase 2D: Production Ready | ⏳ Planned | 0/4 | 0% |
+| Phase 1: Foundation |  Complete | 8/8 | 100% |
+| Phase 2A: Make It Work |  Complete | 6/6 | 100% |
+| Phase 2B: Add Intelligence | In Progress | 0/6 | 0% |
+| Phase 2C: Add Security |  Planned | 0/4 | 0% |
+| Phase 2D: Production Ready |  Planned | 0/4 | 0% |
 
 ---
 
-## ✅ Phase 2A: Make It Work (COMPLETE)
+##  Phase 2A: Make It Work (COMPLETE)
 
 ### Summary
-**Goal**: 5줄로 동작하는 AI agent 만들기 ✅
+**Goal**: 5줄로 동작하는 AI agent 만들기 
 
 **Completed Tasks**:
-1. ✅ Task 1: Builder API Implementation (3 days)
-2. ✅ Task 2: OpenAI Provider Implementation (2 days)
-3. ✅ Task 3: A2A Transport Layer (3 days)
-4. ✅ Task 4: Agent Runtime (3 days)
-5. ✅ Task 5: Simple Chatbot Example (2 days)
-6. ✅ Task 6: Documentation & Polishing (2 days)
+1.  Task 1: Builder API Implementation (3 days)
+2.  Task 2: OpenAI Provider Implementation (2 days)
+3.  Task 3: A2A Transport Layer (3 days)
+4.  Task 4: Agent Runtime (3 days)
+5.  Task 5: Simple Chatbot Example (2 days)
+6.  Task 6: Documentation & Polishing (2 days)
 
 **Deliverables**:
-- ✅ Fluent Builder API with progressive complexity
-- ✅ OpenAI LLM integration (GPT-3.5, GPT-4, GPT-4o)
-- ✅ A2A protocol client/server with type conversion
-- ✅ Agent runtime with Start/Stop lifecycle
-- ✅ Working examples (main.go, minimal.go, client.go)
-- ✅ Complete documentation (README, godoc, examples)
-- ✅ 253 tests passing (100% success rate)
+-  Fluent Builder API with progressive complexity
+-  OpenAI LLM integration (GPT-3.5, GPT-4, GPT-4o)
+-  A2A protocol client/server with type conversion
+-  Agent runtime with Start/Stop lifecycle
+-  Working examples (main.go, minimal.go, client.go)
+-  Complete documentation (README, godoc, examples)
+-  253 tests passing (100% success rate)
 
 **Key Achievements**:
 ```go
@@ -50,7 +50,7 @@ agent.Start(":8080")
 
 ---
 
-## 🚀 Phase 2B: Add Intelligence (CURRENT FOCUS)
+##  Phase 2B: Add Intelligence (CURRENT FOCUS)
 
 **Goal**: SAGE 보안 프로토콜 통합하기
 
@@ -137,8 +137,8 @@ Phase 4 (Complete):
 - [ ] Integration test with sage library
 
 **Dependencies**:
-- ✅ sage library (already exists in sage-x-project/sage)
-- ✅ Core types (pkg/types/security.go already has SAGE types)
+-  sage library (already exists in sage-x-project/sage)
+-  Core types (pkg/types/security.go already has SAGE types)
 
 **Reference Implementation**:
 - `sage/core/handshake/` - Handshake logic
@@ -230,9 +230,9 @@ keyManager.SaveToFile("keys/agent.key", password)
 - [ ] Test coverage ≥ 85%
 
 **Dependencies**:
-- ✅ Task 7 (SAGE Transport)
-- ✅ sage library DID resolver
-- ✅ Ethereum RPC client
+-  Task 7 (SAGE Transport)
+-  sage library DID resolver
+-  Ethereum RPC client
 
 **Testing Strategy**:
 1. Mock blockchain for unit tests
@@ -308,9 +308,9 @@ Incoming Message Flow:
 - [ ] Test coverage ≥ 85%
 
 **Dependencies**:
-- ✅ Task 7 (SAGE Transport)
-- ✅ Task 8 (SAGE Config)
-- ✅ agent.Server interface (from core/agent)
+-  Task 7 (SAGE Transport)
+-  Task 8 (SAGE Config)
+-  agent.Server interface (from core/agent)
 
 **Testing Strategy**:
 1. Unit tests for each middleware component
@@ -422,7 +422,7 @@ sleep 5
 # Register DID
 ./scripts/register-did.sh
 
-echo "✅ Setup complete! Run: go run main.go"
+echo " Setup complete! Run: go run main.go"
 ```
 
 2. **docker-compose.yml**:
@@ -468,7 +468,7 @@ echo "4. Testing secure communication..."
 # Create test client
 go run test-client.go "Hello secure agent!"
 
-echo "✅ All tests passed!"
+echo " All tests passed!"
 ```
 
 **Acceptance Criteria**:
@@ -484,7 +484,7 @@ echo "✅ All tests passed!"
 - [ ] Test script validates E2E flow
 
 **Dependencies**:
-- ✅ Task 7, 8, 9 (SAGE fully implemented)
+-  Task 7, 8, 9 (SAGE fully implemented)
 
 **Testing Strategy**:
 1. Test on fresh Ubuntu VM
@@ -547,8 +547,8 @@ Incoming Message:
 - [ ] Example demonstrates both paths
 
 **Dependencies**:
-- ✅ Task 3 (A2A Transport)
-- ✅ Task 7, 8, 9 (SAGE Transport)
+-  Task 3 (A2A Transport)
+-  Task 7, 8, 9 (SAGE Transport)
 
 **Testing Strategy**:
 1. Send A2A message → verify A2A response
@@ -601,7 +601,7 @@ docs/
 
 ---
 
-## ⏳ Phase 2C: Add Intelligence (MCP) - DEFERRED
+##  Phase 2C: Add Intelligence (MCP) - DEFERRED
 
 **Original Goal**: MCP 도구 통합
 **New Status**: Moved to Phase 3
@@ -615,7 +615,7 @@ docs/
 
 ---
 
-## ⏳ Phase 2D: Production Ready - UNCHANGED
+##  Phase 2D: Production Ready - UNCHANGED
 
 **Goal**: 프로덕션 환경에서 사용 가능하게
 
@@ -627,11 +627,11 @@ docs/
 
 ---
 
-## 📊 Updated Timeline
+##  Updated Timeline
 
 | Week | Phase | Focus | Deliverable |
 |------|-------|-------|-------------|
-| 1-2 | 2A | Builder + Runtime | ✅ Working agent |
+| 1-2 | 2A | Builder + Runtime |  Working agent |
 | 3 | 2B | SAGE Core | SAGE transport + config |
 | 4 | 2B | SAGE Integration | SAGE example + auto-detect |
 | 5-6 | 2D | Storage | Redis + PostgreSQL |
@@ -641,7 +641,7 @@ docs/
 
 ---
 
-## 🎯 Success Metrics
+##  Success Metrics
 
 ### Phase 2B Success (Week 4 End)
 - [ ] SAGE handshake completes successfully
@@ -678,7 +678,7 @@ docs/
 
 ---
 
-## 📝 Changes from v1.0
+##  Changes from v1.0
 
 1. **Re-prioritized Phase 2B**: SAGE security before MCP
 2. **Moved MCP to Phase 3**: Deferred for later

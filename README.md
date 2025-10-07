@@ -8,21 +8,21 @@
 
 **SAGE Agent Development Kit (ADK)** is a comprehensive Go framework for building secure, interoperable AI agents. It seamlessly integrates the **A2A (Agent-to-Agent) Protocol** for standardized agent communication with the **SAGE (Secure Agent Guarantee Engine)** for blockchain-based identity and cryptographic message verification.
 
-## 🚀 Current Status: Phase 2A Complete
+##  Current Status: Phase 2A Complete
 
 **Available Now:**
-- ✅ Fluent Builder API
-- ✅ OpenAI LLM Integration
-- ✅ A2A Protocol Support (Client & Server)
-- ✅ Agent Runtime with Lifecycle Management
-- ✅ Memory Storage Backend
-- ✅ Complete Working Examples
+-  Fluent Builder API
+-  OpenAI LLM Integration
+-  A2A Protocol Support (Client & Server)
+-  Agent Runtime with Lifecycle Management
+-  Memory Storage Backend
+-  Complete Working Examples
 
 **Coming in Phase 2B:**
-- ⏳ SAGE Protocol Security Layer
-- ⏳ Additional LLM Providers (Anthropic, Gemini)
-- ⏳ Redis & PostgreSQL Storage
-- ⏳ Advanced Features (Streaming, Tools, Multi-Agent)
+-  SAGE Protocol Security Layer
+-  Additional LLM Providers (Anthropic, Gemini)
+-  Redis & PostgreSQL Storage
+-  Advanced Features (Streaming, Tools, Multi-Agent)
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	// Start the agent
-	log.Println("🤖 Agent listening on :8080")
+	log.Println(" Agent listening on :8080")
 	if err := chatbot.Start(":8080"); err != nil {
 		log.Fatal(err)
 	}
@@ -142,7 +142,7 @@ agent := builder.NewAgent("my-agent").
     Build()
 ```
 
-### 🤖 LLM Integration
+###  LLM Integration
 
 Currently supports OpenAI with more providers coming:
 
@@ -169,7 +169,7 @@ err := provider.Stream(ctx, request, func(chunk *llm.CompletionResponse) error {
 - GPT-4 Turbo
 - GPT-4o
 
-### 📡 A2A Protocol Support
+###  A2A Protocol Support
 
 Full implementation of Google's Agent-to-Agent protocol:
 
@@ -213,7 +213,7 @@ value, err := storage.Get(ctx, "namespace", "key")
 - Concurrent access safe
 - Type preservation
 
-### 🔄 Agent Lifecycle
+###  Agent Lifecycle
 
 Full lifecycle management with hooks:
 
@@ -393,20 +393,20 @@ go test ./adapters/llm
 ### Test Results
 
 All 253 tests passing:
-- ✅ adapters/a2a: 18 tests
-- ✅ adapters/llm: 26 tests
-- ✅ adapters/sage: 8 tests
-- ✅ builder: 17 tests
-- ✅ config: 28 tests
-- ✅ core/agent: 18 tests
-- ✅ core/protocol: 18 tests
-- ✅ pkg/errors: 36 tests
-- ✅ pkg/types: 58 tests
-- ✅ storage: 26 tests
+-  adapters/a2a: 18 tests
+-  adapters/llm: 26 tests
+-  adapters/sage: 8 tests
+-  builder: 17 tests
+-  config: 28 tests
+-  core/agent: 18 tests
+-  core/protocol: 18 tests
+-  pkg/errors: 36 tests
+-  pkg/types: 58 tests
+-  storage: 26 tests
 
 ## Roadmap
 
-### Phase 2A ✅ Complete
+### Phase 2A  Complete
 - [x] Builder API with fluent interface
 - [x] OpenAI LLM provider
 - [x] A2A protocol client/server
@@ -414,7 +414,7 @@ All 253 tests passing:
 - [x] Memory storage backend
 - [x] Working examples
 
-### Phase 2B 🔄 In Progress
+### Phase 2B  In Progress
 - [ ] SAGE protocol security layer
 - [ ] Anthropic Claude integration
 - [ ] Google Gemini integration
@@ -467,19 +467,19 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 This project is licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**.
 
 **You CAN:**
-- ✅ Use in commercial applications
-- ✅ Use in proprietary software
-- ✅ Modify for your needs
-- ✅ Distribute
+-  Use in commercial applications
+-  Use in proprietary software
+-  Modify for your needs
+-  Distribute
 
 **You MUST:**
-- 📄 Provide SAGE ADK source if you distribute it
-- 🔗 Allow users to replace/relink the library
-- ⚖️ Maintain LGPL-3.0 license notices
+- Provide SAGE ADK source if you distribute it
+- Allow users to replace/relink the library
+- Maintain LGPL-3.0 license notices
 
 **You DON'T Need To:**
-- ❌ Open-source your application
-- ❌ Release your app under LGPL-3.0
+-  Open-source your application
+-  Release your app under LGPL-3.0
 
 See [LICENSE](LICENSE) for details.
 
@@ -499,6 +499,6 @@ See [LICENSE](LICENSE) for details.
 
 ---
 
-**Built by the SAGE Team** 🚀
+**Built by the SAGE Team** 
 
 [Quick Start](#quick-start) | [Examples](examples/) | [Documentation](docs/)

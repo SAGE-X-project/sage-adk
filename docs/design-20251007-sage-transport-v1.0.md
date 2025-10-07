@@ -472,15 +472,15 @@ adapters/sage/
 ## Dependencies
 
 ### Internal (sage-adk)
-- ✅ `pkg/types` - Message types
-- ✅ `pkg/errors` - Error handling
-- ✅ `config` - SAGE configuration
+-  `pkg/types` - Message types
+-  `pkg/errors` - Error handling
+-  `config` - SAGE configuration
 
 ### External (sage library)
-- ✅ `github.com/sage-x-project/sage/core` - Core verification
-- ✅ `github.com/sage-x-project/sage/core/rfc9421` - RFC 9421 signing
-- ✅ `github.com/sage-x-project/sage/crypto/keys` - Key types (Ed25519, X25519)
-- ✅ `github.com/sage-x-project/sage/did` - DID resolution
+-  `github.com/sage-x-project/sage/core` - Core verification
+-  `github.com/sage-x-project/sage/core/rfc9421` - RFC 9421 signing
+-  `github.com/sage-x-project/sage/crypto/keys` - Key types (Ed25519, X25519)
+-  `github.com/sage-x-project/sage/did` - DID resolution
 
 ### Third-party
 - `golang.org/x/crypto/chacha20poly1305` - Encryption

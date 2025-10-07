@@ -19,38 +19,38 @@
 
 | # | Task | Component | Priority | Est. Time | Dependencies | Status |
 |---|------|-----------|----------|-----------|--------------|--------|
-| 1 | Core Type Definitions | `pkg/types/` | **P0** | 2-3h | None | ⬜ Pending |
-| 2 | Error Type Definitions | `pkg/errors/` | **P0** | 1-2h | None | ⬜ Pending |
-| 3 | Configuration Management | `config/` | **P0** | 3-4h | #1 | ⬜ Pending |
-| 4 | Agent Interface & Base | `core/agent/` | **P1** | 4-5h | #1, #2 | ⬜ Pending |
-| 5 | Protocol Interface & Selector | `core/protocol/` | **P1** | 3-4h | #1, #4 | ⬜ Pending |
-| 6 | Message Router | `core/message/` | **P1** | 3-4h | #1, #4 | ⬜ Pending |
-| 7 | A2A Adapter | `adapters/a2a/` | **P1** | 5-6h | #5, #6 | ⬜ Pending |
-| 8 | Storage Interface | `storage/` | **P1** | 2-3h | #1 | ⬜ Pending |
-| 9 | Memory Storage | `storage/memory.go` | **P1** | 2-3h | #8 | ⬜ Pending |
-| 10 | Agent Builder | `builder/` | **P1** | 4-5h | #4, #5 | ⬜ Pending |
-| 11 | LLM Provider Interface | `adapters/llm/` | **P1** | 2-3h | #1 | ⬜ Pending |
-| 12 | OpenAI Provider | `adapters/llm/openai.go` | **P1** | 2-3h | #11 | ⬜ Pending |
-| 13 | HTTP Server | `server/` | **P1** | 4-5h | #6, #7 | ⬜ Pending |
-| 14 | Simple Agent Example | `examples/simple-agent/` | **P1** | 2-3h | #10, #12 | ⬜ Pending |
-| 15 | Redis Storage | `storage/redis.go` | **P2** | 3-4h | #8 | ⬜ Pending |
-| 16 | Anthropic Provider | `adapters/llm/anthropic.go` | **P2** | 2-3h | #11 | ⬜ Pending |
-| 17 | Gemini Provider | `adapters/llm/gemini.go` | **P2** | 2-3h | #11 | ⬜ Pending |
-| 18 | Auth Middleware | `server/middleware/auth.go` | **P2** | 2-3h | #13 | ⬜ Pending |
-| 19 | Logging Middleware | `server/middleware/logging.go` | **P2** | 1-2h | #13 | ⬜ Pending |
-| 20 | Metrics Middleware | `server/middleware/metrics.go` | **P2** | 2-3h | #13 | ⬜ Pending |
-| 21 | CORS Middleware | `server/middleware/cors.go` | **P2** | 1-2h | #13 | ⬜ Pending |
-| 22 | Rate Limit Middleware | `server/middleware/ratelimit.go` | **P2** | 2-3h | #13 | ⬜ Pending |
-| 23 | SAGE Adapter | `adapters/sage/` | **P2** | 5-6h | #5 | ⬜ Pending |
-| 24 | DID Management | `adapters/sage/did.go` | **P2** | 3-4h | #23 | ⬜ Pending |
-| 25 | Message Signing/Verification | `adapters/sage/verifier.go` | **P2** | 3-4h | #23 | ⬜ Pending |
-| 26 | Security Features | `security/` | **P2** | 4-5h | #23 | ⬜ Pending |
-| 27 | SAGE Agent Example | `examples/sage-enabled-agent/` | **P2** | 3-4h | #23-#26 | ⬜ Pending |
-| 28 | Client SDK | `client/` | **P2** | 4-5h | #13 | ⬜ Pending |
-| 29 | PostgreSQL Storage | `storage/postgres.go` | **P3** | 3-4h | #8 | ⬜ Pending |
-| 30 | CLI Tool | `cmd/adk/` | **P3** | 4-5h | All | ⬜ Pending |
-| 31 | Multi-LLM Example | `examples/multi-llm-agent/` | **P3** | 2-3h | #12, #16, #17 | ⬜ Pending |
-| 32 | Orchestrator Example | `examples/orchestrator/` | **P3** | 4-5h | #28 | ⬜ Pending |
+| 1 | Core Type Definitions | `pkg/types/` | **P0** | 2-3h | None |  |
+| 2 | Error Type Definitions | `pkg/errors/` | **P0** | 1-2h | None |  |
+| 3 | Configuration Management | `config/` | **P0** | 3-4h | #1 |  |
+| 4 | Agent Interface & Base | `core/agent/` | **P1** | 4-5h | #1, #2 |  |
+| 5 | Protocol Interface & Selector | `core/protocol/` | **P1** | 3-4h | #1, #4 |  |
+| 6 | Message Router | `core/message/` | **P1** | 3-4h | #1, #4 |  |
+| 7 | A2A Adapter | `adapters/a2a/` | **P1** | 5-6h | #5, #6 |  |
+| 8 | Storage Interface | `storage/` | **P1** | 2-3h | #1 |  |
+| 9 | Memory Storage | `storage/memory.go` | **P1** | 2-3h | #8 |  |
+| 10 | Agent Builder | `builder/` | **P1** | 4-5h | #4, #5 |  |
+| 11 | LLM Provider Interface | `adapters/llm/` | **P1** | 2-3h | #1 |  |
+| 12 | OpenAI Provider | `adapters/llm/openai.go` | **P1** | 2-3h | #11 |  |
+| 13 | HTTP Server | `server/` | **P1** | 4-5h | #6, #7 |  |
+| 14 | Simple Agent Example | `examples/simple-agent/` | **P1** | 2-3h | #10, #12 |  |
+| 15 | Redis Storage | `storage/redis.go` | **P2** | 3-4h | #8 |  |
+| 16 | Anthropic Provider | `adapters/llm/anthropic.go` | **P2** | 2-3h | #11 |  |
+| 17 | Gemini Provider | `adapters/llm/gemini.go` | **P2** | 2-3h | #11 |  |
+| 18 | Auth Middleware | `server/middleware/auth.go` | **P2** | 2-3h | #13 |  |
+| 19 | Logging Middleware | `server/middleware/logging.go` | **P2** | 1-2h | #13 |  |
+| 20 | Metrics Middleware | `server/middleware/metrics.go` | **P2** | 2-3h | #13 |  |
+| 21 | CORS Middleware | `server/middleware/cors.go` | **P2** | 1-2h | #13 |  |
+| 22 | Rate Limit Middleware | `server/middleware/ratelimit.go` | **P2** | 2-3h | #13 |  |
+| 23 | SAGE Adapter | `adapters/sage/` | **P2** | 5-6h | #5 |  |
+| 24 | DID Management | `adapters/sage/did.go` | **P2** | 3-4h | #23 |  |
+| 25 | Message Signing/Verification | `adapters/sage/verifier.go` | **P2** | 3-4h | #23 |  |
+| 26 | Security Features | `security/` | **P2** | 4-5h | #23 |  |
+| 27 | SAGE Agent Example | `examples/sage-enabled-agent/` | **P2** | 3-4h | #23-#26 |  |
+| 28 | Client SDK | `client/` | **P2** | 4-5h | #13 |  |
+| 29 | PostgreSQL Storage | `storage/postgres.go` | **P3** | 3-4h | #8 |  |
+| 30 | CLI Tool | `cmd/adk/` | **P3** | 4-5h | All |  |
+| 31 | Multi-LLM Example | `examples/multi-llm-agent/` | **P3** | 2-3h | #12, #16, #17 |  |
+| 32 | Orchestrator Example | `examples/orchestrator/` | **P3** | 4-5h | #28 |  |
 
 ---
 
@@ -303,11 +303,11 @@
 ## Legend
 
 **Status Icons**:
-- ⬜ Pending
-- 🔄 In Progress
-- ✅ Complete
-- ⏸️ Blocked
-- ❌ Cancelled
+- 
+- 
+-  Complete
+- 
+-  Cancelled
 
 **Priority Levels**:
 - **P0**: Critical - Blocks other work

@@ -38,7 +38,7 @@ Welcome to the **SAGE Agent Development Kit (ADK)** documentation. This comprehe
 - [Orchestrator Agent](examples/orchestrator-agent.md) - Agent coordination
 - [Production Deployment](examples/production-deployment.md) - Deploy to production
 
-## 🎯 Key Features
+##  Key Features
 
 ### 1. **Dual Protocol Support**
 - **A2A Protocol**: Standard agent-to-agent communication
@@ -63,7 +63,7 @@ Welcome to the **SAGE Agent Development Kit (ADK)** documentation. This comprehe
 - CORS support
 - Authentication middleware
 
-## 🚀 Quick Example
+##  Quick Example
 
 ```go
 package main
@@ -149,7 +149,7 @@ When using SAGE mode:
    docker build -t my-agent .
    ```
 
-## 🔗 External Resources
+## External Resources
 
 - [A2A Protocol Specification](https://github.com/google/a2a-protocol)
 - [SAGE Security Framework](https://github.com/sage-x-project/sage)
@@ -161,7 +161,7 @@ When using SAGE mode:
 - **Discussions**: [GitHub Discussions](https://github.com/sage-x-project/sage-adk/discussions)
 - **Discord**: [SAGE Community](https://discord.gg/sage-x)
 
-## 📄 License
+## License
 
 SAGE ADK is licensed under the LGPL-3.0 License. See [LICENSE](../LICENSE) for details.
 

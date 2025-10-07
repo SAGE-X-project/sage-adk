@@ -63,13 +63,13 @@ func main() {
 		WithA2AConfig(a2aConfig).
 		OnMessage(handleMessage(provider)).
 		BeforeStart(func(ctx context.Context) error {
-			log.Println("🤖 Simple Chatbot Agent starting...")
-			log.Println("📡 Listening on http://localhost:8080")
-			log.Println("💬 Ready to receive messages via A2A protocol")
+			log.Println("Simple Chatbot Agent starting...")
+			log.Println("Listening on http://localhost:8080")
+			log.Println("Ready to receive messages via A2A protocol")
 			return nil
 		}).
 		AfterStop(func(ctx context.Context) error {
-			log.Println("👋 Simple Chatbot Agent stopped")
+			log.Println("Simple Chatbot Agent stopped")
 			return nil
 		}).
 		Build()
@@ -123,13 +123,13 @@ func handleMessage(provider llm.Provider) agent.MessageHandler {
 		// Get response from LLM
 		response, err := provider.Complete(ctx, request)
 		if err != nil {
-			log.Printf("❌ LLM error: %v", err)
+			log.Printf("LLM error: %v", err)
 			return fmt.Errorf("failed to get LLM response: %w", err)
 		}
 
 		// Extract response text
 		responseText := response.Content
-		log.Printf("💬 Response: %s", responseText)
+		log.Printf("Response: %s", responseText)
 
 		// Reply to the message
 		return msg.Reply(responseText)

@@ -4,10 +4,10 @@ A minimal example of building an AI chatbot agent using SAGE ADK with OpenAI int
 
 ## Features
 
-- 🤖 OpenAI-powered conversational AI
-- 📡 A2A (Agent-to-Agent) protocol support
-- 🔄 Graceful shutdown handling
-- 📝 Clean and simple implementation
+-  OpenAI-powered conversational AI
+-  A2A (Agent-to-Agent) protocol support
+-  Graceful shutdown handling
+-  Clean and simple implementation
 
 ## Prerequisites
 
