@@ -39,4 +39,11 @@ var (
 		Code:     "CONFIGURATION_ERROR",
 		Message:  "configuration error",
 	}
+
+	// ErrOperationFailed indicates an operation failed.
+	ErrOperationFailed = &Error{
+		Category: CategoryInternal,
+		Code:     "OPERATION_FAILED",
+		Message:  "operation failed",
+	}
 )

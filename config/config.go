@@ -70,12 +70,14 @@ type A2AConfig struct {
 
 // SAGEConfig contains SAGE protocol and security settings.
 type SAGEConfig struct {
-	Enabled        bool
-	Network        string // "ethereum", "kaia", "sepolia", etc.
-	DID            string
-	PrivateKeyPath string
-	CacheEnabled   bool
-	CacheTTL       time.Duration
+	Enabled         bool
+	Network         string // "ethereum", "kaia", "sepolia", etc.
+	DID             string
+	RPCEndpoint     string // RPC endpoint URL
+	ContractAddress string // Smart contract address
+	PrivateKeyPath  string
+	CacheEnabled    bool
+	CacheTTL        time.Duration
 }
 
 // LLMConfig contains LLM provider configuration.
@@ -187,4 +189,10 @@ func DefaultConfig() *Config {
 			Path:    "/metrics",
 		},
 	}
+}
+
+// NewConfig creates a new default configuration.
+// This is an alias for DefaultConfig().
+func NewConfig() *Config {
+	return DefaultConfig()
 }
