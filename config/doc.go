@@ -18,10 +18,10 @@
 // Package config provides configuration management for SAGE ADK.
 //
 // The configuration system supports multiple sources with the following precedence:
-//   1. Programmatic configuration (explicit Set calls)
-//   2. Environment variables (prefixed with ADK_)
-//   3. Configuration file (YAML)
-//   4. Default values
+//  1. Programmatic configuration (explicit Set calls)
+//  2. Environment variables (prefixed with ADK_)
+//  3. Configuration file (YAML)
+//  4. Default values
 //
 // # Configuration Structure
 //

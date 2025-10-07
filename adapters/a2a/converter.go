@@ -30,7 +30,7 @@ import (
 func toA2AMessage(msg *types.Message) (a2a.Message, error) {
 	if msg == nil {
 		return a2a.Message{}, errors.ErrInvalidInput.WithMessage("message is nil")
-}
+	}
 
 	parts, err := toA2AParts(msg.Parts)
 	if err != nil {
@@ -52,7 +52,7 @@ func toA2AMessage(msg *types.Message) (a2a.Message, error) {
 func fromA2AMessage(msg *a2a.Message) (*types.Message, error) {
 	if msg == nil {
 		return nil, errors.ErrInvalidInput.WithMessage("message is nil")
-}
+	}
 
 	parts, err := fromA2AParts(msg.Parts)
 	if err != nil {
@@ -173,7 +173,7 @@ func fromA2APart(part a2a.Part) (types.Part, error) {
 func toA2AFilePart(p *types.FilePart) (a2a.FilePart, error) {
 	if p.File == nil {
 		return a2a.FilePart{}, errors.ErrInvalidInput.WithMessage("file content is nil")
-}
+	}
 
 	var fileUnion a2a.FileUnion
 
@@ -208,7 +208,7 @@ func toA2AFilePart(p *types.FilePart) (a2a.FilePart, error) {
 func fromA2AFilePart(p *a2a.FilePart) (*types.FilePart, error) {
 	if p.File == nil {
 		return nil, errors.ErrInvalidInput.WithMessage("file content is nil")
-}
+	}
 
 	var file types.FileContent
 

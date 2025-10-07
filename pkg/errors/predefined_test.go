@@ -200,7 +200,7 @@ func TestErrorUsage_ChainedOperations(t *testing.T) {
 	err := ErrStorageConnection.
 		WithMessage("failed to connect to Redis").
 		WithDetails(map[string]interface{}{
-			"host": "localhost:6379",
+			"host":    "localhost:6379",
 			"timeout": "5s",
 		})
 
