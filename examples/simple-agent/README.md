@@ -25,10 +25,16 @@ export OPENAI_API_KEY="your-api-key-here"
 2. Run the agent:
 
 ```bash
-go run main.go
+# Full-featured chatbot with OpenAI
+go run -tags examples main.go
+
+# Or minimal echo agent
+go run -tags examples minimal.go
 ```
 
 The agent will start listening on `http://localhost:8080`.
+
+**Note:** The `-tags examples` flag is required because these example files are excluded from normal builds to avoid conflicts with the test suite.
 
 ## Usage
 
@@ -38,7 +44,19 @@ The chatbot agent accepts messages via the A2A protocol. You can interact with i
 2. **HTTP POST** to the A2A endpoint
 3. **sage-a2a-go CLI tools**
 
-### Example: Using A2A Client
+### Example: Using the Test Client
+
+The easiest way to test the agent is using the included client:
+
+```bash
+# In terminal 1: Start the agent
+go run -tags examples main.go
+
+# In terminal 2: Send a message
+go run -tags examples client.go "Hello! How are you?"
+```
+
+### Example: Using A2A Client in Code
 
 ```go
 package main

@@ -15,6 +15,9 @@
 
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+//go:build examples
+// +build examples
+
 package main
 
 import (
