@@ -372,3 +372,20 @@ func unmarshalPart(rawPart json.RawMessage) (Part, error) {
 		return nil, fmt.Errorf("unsupported part kind: %s", typeDetect.Kind)
 	}
 }
+
+// StreamingEvent represents a Server-Sent Event during streaming communication.
+//
+// Used for real-time message delivery from agent to client.
+type StreamingEvent struct {
+	// EventType is the type of the event (e.g., "message", "close", "error").
+	EventType string `json:"eventType"`
+
+	// Data contains the event-specific data payload.
+	Data interface{} `json:"data,omitempty"`
+
+	// Message contains the message data (for "message" events).
+	Message *Message `json:"message,omitempty"`
+
+	// Metadata is optional metadata.
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
