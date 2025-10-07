@@ -21,6 +21,8 @@ import (
 	"context"
 
 	"github.com/sage-x-project/sage-adk/core/agent"
+	"github.com/sage-x-project/sage-adk/pkg/types"
+	a2aprotocol "trpc.group/trpc-go/trpc-a2a-go/protocol"
 	a2aserver "trpc.group/trpc-go/trpc-a2a-go/server"
 	"trpc.group/trpc-go/trpc-a2a-go/taskmanager"
 )
@@ -97,25 +99,111 @@ func (s *Server) Stop(ctx context.Context) error {
 	return s.server.Stop(ctx)
 }
 
-// taskManager implements the taskmanager.TaskManager interface
+// messageProcessor implements the taskmanager.MessageProcessor interface
 // to integrate with the agent's message handler.
-type taskManagerImpl struct {
+type messageProcessor struct {
 	handler agent.MessageHandler
+}
+
+// ProcessMessage processes an incoming message.
+func (p *messageProcessor) ProcessMessage(
+	ctx context.Context,
+	msg a2aprotocol.Message,
+	options taskmanager.ProcessOptions,
+	handler taskmanager.TaskHandler,
+) (*taskmanager.MessageProcessingResult, error) {
+	// Convert A2A message to sage-adk message
+	sdkMsg := convertA2AMessageToSDK(&msg)
+
+	// For now, we create a simple messageContext wrapper
+	// TODO: Implement proper MessageContext that supports Reply() and other methods
+	msgCtx := &simpleMessageContext{
+		message: sdkMsg,
+	}
+
+	// Call the agent's message handler
+	if err := p.handler(ctx, msgCtx); err != nil {
+		return nil, err
+	}
+
+	// For now, return a simple response message
+	// In a real implementation, this would be the agent's actual response
+	response := &a2aprotocol.Message{
+		Role:  a2aprotocol.MessageRoleAgent,
+		Parts: []a2aprotocol.Part{},
+	}
+
+	return &taskmanager.MessageProcessingResult{
+		Result: response,
+	}, nil
+}
+
+// simpleMessageContext is a simple implementation of MessageContext for the server.
+type simpleMessageContext struct {
+	message *types.Message
+}
+
+func (m *simpleMessageContext) Text() string {
+	for _, part := range m.message.Parts {
+		if textPart, ok := part.(*types.TextPart); ok {
+			return textPart.Text
+		}
+	}
+	return ""
+}
+
+func (m *simpleMessageContext) Parts() []types.Part {
+	return m.message.Parts
+}
+
+func (m *simpleMessageContext) ContextID() string {
+	if m.message.ContextID != nil {
+		return *m.message.ContextID
+	}
+	return ""
+}
+
+func (m *simpleMessageContext) MessageID() string {
+	return m.message.MessageID
+}
+
+func (m *simpleMessageContext) Reply(text string) error {
+	// TODO: Implement reply functionality
+	return nil
+}
+
+func (m *simpleMessageContext) ReplyWithParts(parts []types.Part) error {
+	// TODO: Implement reply with parts functionality
+	return nil
+}
+
+// convertA2AMessageToSDK converts an A2A protocol message to sage-adk message.
+func convertA2AMessageToSDK(msg *a2aprotocol.Message) *types.Message {
+	parts := make([]types.Part, len(msg.Parts))
+	for i, part := range msg.Parts {
+		parts[i] = convertPartFromA2A(part)
+	}
+
+	return &types.Message{
+		Role:  types.MessageRole(msg.Role),
+		Parts: parts,
+	}
 }
 
 // newTaskManager creates a new task manager.
 func newTaskManager(handler agent.MessageHandler) taskmanager.TaskManager {
+	// Create message processor
+	processor := &messageProcessor{
+		handler: handler,
+	}
+
 	// Use the memory task manager from sage-a2a-go
-	// and wrap the agent's message handler
-	memoryTM := taskmanager.NewMemoryTaskManager(
-		taskmanager.WithMessageHandler(func(ctx context.Context, msg taskmanager.MessageContext) error {
-			// Convert to agent.MessageContext and call the agent's handler
-			agentMsg := agent.MessageContext{
-				Message: msg.GetMessage(),
-			}
-			return handler(ctx, agentMsg)
-		}),
-	)
+	memoryTM, err := taskmanager.NewMemoryTaskManager(processor)
+	if err != nil {
+		// In case of error, return nil
+		// This should be handled better in production code
+		return nil
+	}
 
 	return memoryTM
 }

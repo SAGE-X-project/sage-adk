@@ -68,9 +68,9 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message) (*types.Me
 	}
 
 	// Convert A2A message result back to sage-adk message
-	// MessageResult.Result can be either Message or Task
-	if resultMsg, ok := result.Result.(a2aprotocol.Message); ok {
-		return convertMessageFromA2A(&resultMsg), nil
+	// MessageResult.Result can be either *Message or *Task
+	if resultMsg, ok := result.Result.(*a2aprotocol.Message); ok {
+		return convertMessageFromA2A(resultMsg), nil
 	}
 
 	return nil, nil
@@ -238,9 +238,9 @@ func convertPartFromA2A(part a2aprotocol.Part) types.Part {
 func convertStreamingEventFromA2A(event a2aprotocol.StreamingMessageEvent) types.StreamingEvent {
 	var msg *types.Message
 
-	// StreamingMessageEvent.Result can be Message, Task, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
-	if resultMsg, ok := event.Result.(a2aprotocol.Message); ok {
-		msg = convertMessageFromA2A(&resultMsg)
+	// StreamingMessageEvent.Result can be *Message, *Task, *TaskStatusUpdateEvent, or *TaskArtifactUpdateEvent
+	if resultMsg, ok := event.Result.(*a2aprotocol.Message); ok {
+		msg = convertMessageFromA2A(resultMsg)
 	}
 
 	return types.StreamingEvent{

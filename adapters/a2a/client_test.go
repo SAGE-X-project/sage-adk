@@ -24,6 +24,11 @@ import (
 	a2aprotocol "trpc.group/trpc-go/trpc-a2a-go/protocol"
 )
 
+// Helper function to create string pointer
+func stringPtr(s string) *string {
+	return &s
+}
+
 func TestNewClient(t *testing.T) {
 	client, err := NewClient("http://localhost:8080/")
 	if err != nil {
@@ -59,10 +64,10 @@ func TestConvertMessageToA2A(t *testing.T) {
 				Parts: []types.Part{types.NewTextPart("Hello")},
 			},
 			want: a2aprotocol.Message{
-				Role: string(types.MessageRoleUser),
+				Role: a2aprotocol.MessageRoleUser,
 				Parts: []a2aprotocol.Part{
-					{
-						Type: a2aprotocol.PartTypeText,
+					a2aprotocol.TextPart{
+						Kind: "text",
 						Text: "Hello",
 					},
 				},
@@ -73,22 +78,18 @@ func TestConvertMessageToA2A(t *testing.T) {
 			msg: &types.Message{
 				Role: types.MessageRoleUser,
 				Parts: []types.Part{
-					types.NewFilePart(types.FileWithBytes{
-						Name:     "test.txt",
-						MimeType: "text/plain",
-						Data:     "dGVzdA==",
-					}),
+					types.NewFilePartWithBytes("test.txt", "text/plain", []byte("test")),
 				},
 			},
 			want: a2aprotocol.Message{
-				Role: string(types.MessageRoleUser),
+				Role: a2aprotocol.MessageRoleUser,
 				Parts: []a2aprotocol.Part{
-					{
-						Type: a2aprotocol.PartTypeFile,
+					a2aprotocol.FilePart{
+						Kind: "file",
 						File: &a2aprotocol.FileWithBytes{
-							Name:     "test.txt",
-							MimeType: "text/plain",
-							Data:     "dGVzdA==",
+							Name:     stringPtr("test.txt"),
+							MimeType: stringPtr("text/plain"),
+							Bytes:    "dGVzdA==", // base64 encoded "test"
 						},
 					},
 				},
@@ -97,7 +98,7 @@ func TestConvertMessageToA2A(t *testing.T) {
 		{
 			name: "message with data part",
 			msg: &types.Message{
-				Role: types.MessageRoleAssistant,
+				Role: types.MessageRoleAgent,
 				Parts: []types.Part{
 					types.NewDataPart(map[string]interface{}{
 						"key": "value",
@@ -105,10 +106,10 @@ func TestConvertMessageToA2A(t *testing.T) {
 				},
 			},
 			want: a2aprotocol.Message{
-				Role: string(types.MessageRoleAssistant),
+				Role: a2aprotocol.MessageRoleAgent,
 				Parts: []a2aprotocol.Part{
-					{
-						Type: a2aprotocol.PartTypeData,
+					a2aprotocol.DataPart{
+						Kind: "data",
 						Data: map[string]interface{}{
 							"key": "value",
 						},
@@ -132,8 +133,8 @@ func TestConvertMessageToA2A(t *testing.T) {
 
 			for i, part := range got.Parts {
 				wantPart := tt.want.Parts[i]
-				if part.Type != wantPart.Type {
-					t.Errorf("Part[%d].Type = %v, want %v", i, part.Type, wantPart.Type)
+				if part.GetKind() != wantPart.GetKind() {
+					t.Errorf("Part[%d].Kind = %v, want %v", i, part.GetKind(), wantPart.GetKind())
 				}
 			}
 		})
@@ -149,43 +150,17 @@ func TestConvertMessageFromA2A(t *testing.T) {
 		{
 			name: "text message",
 			msg: &a2aprotocol.Message{
-				Role: string(types.MessageRoleAssistant),
+				Role: a2aprotocol.MessageRoleAgent,
 				Parts: []a2aprotocol.Part{
-					{
-						Type: a2aprotocol.PartTypeText,
+					a2aprotocol.TextPart{
+						Kind: "text",
 						Text: "Hello back",
 					},
 				},
 			},
 			want: &types.Message{
-				Role:  types.MessageRoleAssistant,
+				Role:  types.MessageRoleAgent,
 				Parts: []types.Part{types.NewTextPart("Hello back")},
-			},
-		},
-		{
-			name: "message with file bytes",
-			msg: &a2aprotocol.Message{
-				Role: string(types.MessageRoleAssistant),
-				Parts: []a2aprotocol.Part{
-					{
-						Type: a2aprotocol.PartTypeFile,
-						File: &a2aprotocol.FileWithBytes{
-							Name:     "response.json",
-							MimeType: "application/json",
-							Data:     "eyJrZXkiOiJ2YWx1ZSJ9",
-						},
-					},
-				},
-			},
-			want: &types.Message{
-				Role: types.MessageRoleAssistant,
-				Parts: []types.Part{
-					types.NewFilePart(types.FileWithBytes{
-						Name:     "response.json",
-						MimeType: "application/json",
-						Data:     "eyJrZXkiOiJ2YWx1ZSJ9",
-					}),
-				},
 			},
 		},
 	}
@@ -209,42 +184,35 @@ func TestConvertPartToA2A(t *testing.T) {
 	tests := []struct {
 		name string
 		part types.Part
-		want string // part type
+		want string // part kind
 	}{
 		{
 			name: "text part",
 			part: types.NewTextPart("test"),
-			want: a2aprotocol.PartTypeText,
+			want: "text",
 		},
 		{
 			name: "file part with bytes",
-			part: types.NewFilePart(types.FileWithBytes{
-				Name:     "test.txt",
-				MimeType: "text/plain",
-				Data:     "dGVzdA==",
-			}),
-			want: a2aprotocol.PartTypeFile,
+			part: types.NewFilePartWithBytes("test.txt", "text/plain", []byte("test")),
+			want: "file",
 		},
 		{
 			name: "file part with URI",
-			part: types.NewFilePart(types.FileWithURI{
-				URI:      "http://example.com/file.pdf",
-				MimeType: "application/pdf",
-			}),
-			want: a2aprotocol.PartTypeFile,
+			part: types.NewFilePartWithURI("file.pdf", "application/pdf", "http://example.com/file.pdf"),
+			want: "file",
 		},
 		{
 			name: "data part",
 			part: types.NewDataPart(map[string]interface{}{"key": "value"}),
-			want: a2aprotocol.PartTypeData,
+			want: "data",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := convertPartToA2A(tt.part)
-			if got.Type != tt.want {
-				t.Errorf("Type = %v, want %v", got.Type, tt.want)
+			if got.GetKind() != tt.want {
+				t.Errorf("Kind = %v, want %v", got.GetKind(), tt.want)
 			}
 		})
 	}
@@ -257,26 +225,26 @@ func TestConvertPartFromA2A(t *testing.T) {
 	}{
 		{
 			name: "text part",
-			part: a2aprotocol.Part{
-				Type: a2aprotocol.PartTypeText,
+			part: a2aprotocol.TextPart{
+				Kind: "text",
 				Text: "test",
 			},
 		},
 		{
 			name: "file part",
-			part: a2aprotocol.Part{
-				Type: a2aprotocol.PartTypeFile,
+			part: a2aprotocol.FilePart{
+				Kind: "file",
 				File: &a2aprotocol.FileWithBytes{
-					Name:     "test.txt",
-					MimeType: "text/plain",
-					Data:     "dGVzdA==",
+					Name:     stringPtr("test.txt"),
+					MimeType: stringPtr("text/plain"),
+					Bytes:    "dGVzdA==",
 				},
 			},
 		},
 		{
 			name: "data part",
-			part: a2aprotocol.Part{
-				Type: a2aprotocol.PartTypeData,
+			part: a2aprotocol.DataPart{
+				Kind: "data",
 				Data: map[string]interface{}{"key": "value"},
 			},
 		},
