@@ -307,9 +307,9 @@ func TestHandshakeManager_ProcessResponse(t *testing.T) {
 		t.Errorf("Bob SessionKey length = %d, want 32", len(bobSession.SessionKey))
 	}
 
-	// Bob's session should still be establishing
-	if bobSession.Status != SessionEstablishing {
-		t.Errorf("Bob session status = %d, want %d", bobSession.Status, SessionEstablishing)
+	// Bob's session should now be active after ProcessResponse
+	if bobSession.Status != SessionActive {
+		t.Errorf("Bob session status = %d, want %d", bobSession.Status, SessionActive)
 	}
 }
 
@@ -386,8 +386,9 @@ func TestHandshakeManager_FullFlow(t *testing.T) {
 		t.Errorf("Alice session not active: %d", aliceSession.Status)
 	}
 
-	if bobSession.Status != SessionEstablishing {
-		t.Errorf("Bob session should still be establishing: %d", bobSession.Status)
+	// Bob's session should also be active after ProcessResponse
+	if bobSession.Status != SessionActive {
+		t.Errorf("Bob session should be active: %d", bobSession.Status)
 	}
 
 	// Verify session keys match

@@ -124,6 +124,10 @@ func (sm *SigningManager) createSignatureBase(message interface{}) (string, erro
 		copy := *v
 		copy.Signature = SignatureEnvelope{}
 		messageToSign = copy
+	case *ApplicationMessage:
+		copy := *v
+		copy.Signature = SignatureEnvelope{}
+		messageToSign = copy
 	case HandshakeRequest:
 		v.Signature = SignatureEnvelope{}
 		messageToSign = v
@@ -131,6 +135,9 @@ func (sm *SigningManager) createSignatureBase(message interface{}) (string, erro
 		v.Signature = SignatureEnvelope{}
 		messageToSign = v
 	case HandshakeComplete:
+		v.Signature = SignatureEnvelope{}
+		messageToSign = v
+	case ApplicationMessage:
 		v.Signature = SignatureEnvelope{}
 		messageToSign = v
 	}

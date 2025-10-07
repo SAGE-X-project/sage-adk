@@ -274,11 +274,8 @@ func (hm *HandshakeManager) ProcessRequest(ctx context.Context, request *Handsha
 	// Create response payload
 	responsePayload := &HandshakeResponsePayload{
 		RequestNonce: requestPayload.ResponseNonce,
-		SessionKey:   base64.StdEncoding.EncodeToString(sessionKey),
-		Expiry:       session.ExpiresAt,
-		Metadata: map[string]interface{}{
-			"max_message_size": hm.config.MaxMessageSize,
-		},
+		SessionKey: base64.StdEncoding.EncodeToString(sessionKey),
+		Expiry:     session.ExpiresAt,
 	}
 
 	// Encrypt with shared secret
@@ -384,6 +381,12 @@ func (hm *HandshakeManager) ProcessResponse(ctx context.Context, response *Hands
 		return nil, err
 	}
 	complete.Signature = *signature
+
+	// Activate Bob's session (Bob has the session key now)
+	session.Status = SessionActive
+	if err := hm.sessionManager.Update(session); err != nil {
+		return nil, err
+	}
 
 	return complete, nil
 }
