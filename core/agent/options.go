@@ -28,6 +28,12 @@ import (
 	"github.com/sage-x-project/sage-adk/storage"
 )
 
+// ServerFactory is a function that creates a server instance.
+//
+// This allows the builder to inject server creation without creating
+// an import cycle.
+type ServerFactory func(config interface{}, handler MessageHandler) (interface{ Stop(context.Context) error }, error)
+
 // Options contains all configuration options for creating an agent.
 //
 // This struct is used by the builder package to construct agents
@@ -59,6 +65,9 @@ type Options struct {
 	// Message handler (required)
 	MessageHandler MessageHandler
 
+	// Server factory (optional, protocol-specific)
+	ServerFactory ServerFactory
+
 	// Lifecycle hooks (optional)
 	BeforeStart func(context.Context) error
 	AfterStop   func(context.Context) error
@@ -87,6 +96,11 @@ type AgentImpl struct {
 	// Lifecycle hooks
 	beforeStart func(context.Context) error
 	afterStop   func(context.Context) error
+
+	// Runtime state
+	a2aConfig  *config.A2AConfig
+	sageConfig *config.SAGEConfig
+	server     Server // HTTP server (A2A or custom)
 }
 
 // NewAgentWithOptions creates a new agent from options.
@@ -141,9 +155,17 @@ func NewAgentWithOptions(opts *Options) (*AgentImpl, error) {
 		storage:          opts.Storage,
 		beforeStart:      opts.BeforeStart,
 		afterStop:        opts.AfterStop,
+		a2aConfig:        opts.A2AConfig,
+		sageConfig:       opts.SAGEConfig,
 	}
 
 	return agent, nil
+}
+
+// Server is an interface for agent servers that can be started and stopped.
+type Server interface {
+	Start(addr string) error
+	Stop(ctx context.Context) error
 }
 
 // Start starts the agent server on the specified address.
@@ -164,16 +186,25 @@ func (a *AgentImpl) Start(addr string) error {
 		}
 	}
 
-	// TODO: Implement actual server startup
-	// This will be implemented in Task 4 (Agent Runtime)
+	// Check server is configured
+	if a.server == nil {
+		return errors.ErrInvalidInput.WithMessage("server not configured - use builder to create agent with protocol support")
+	}
 
-	return errors.ErrNotImplemented.WithMessage("agent.Start() not yet implemented")
+	// Start server (blocking)
+	return a.server.Start(addr)
 }
 
 // Stop gracefully stops the agent.
 func (a *AgentImpl) Stop(ctx context.Context) error {
-	// TODO: Implement graceful shutdown
-	// This will be implemented in Task 4 (Agent Runtime)
+	// Stop the server if it's running
+	if a.server != nil {
+		if err := a.server.Stop(ctx); err != nil {
+			return errors.ErrOperationFailed.
+				WithMessage("failed to stop server").
+				WithDetail("error", err.Error())
+		}
+	}
 
 	// Run AfterStop hook
 	if a.afterStop != nil {
@@ -184,7 +215,7 @@ func (a *AgentImpl) Stop(ctx context.Context) error {
 		}
 	}
 
-	return errors.ErrNotImplemented.WithMessage("agent.Stop() not yet implemented")
+	return nil
 }
 
 // LLMProvider returns the agent's LLM provider.
@@ -202,4 +233,15 @@ func (a *AgentImpl) Storage() storage.Storage {
 // ProtocolMode returns the agent's protocol mode.
 func (a *AgentImpl) ProtocolMode() protocol.ProtocolMode {
 	return a.protocolMode
+}
+
+// SetServer sets the agent's server instance.
+//
+// This is called by the builder to inject the protocol-specific server.
+func (a *AgentImpl) SetServer(srv Server) error {
+	if srv == nil {
+		return errors.ErrInvalidInput.WithMessage("server cannot be nil")
+	}
+	a.server = srv
+	return nil
 }

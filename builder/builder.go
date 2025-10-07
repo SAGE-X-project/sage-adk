@@ -20,6 +20,7 @@ package builder
 import (
 	"context"
 
+	"github.com/sage-x-project/sage-adk/adapters/a2a"
 	"github.com/sage-x-project/sage-adk/adapters/llm"
 	"github.com/sage-x-project/sage-adk/config"
 	"github.com/sage-x-project/sage-adk/core/agent"
@@ -270,9 +271,14 @@ func (b *Builder) applyDefaults() error {
 		b.a2aConfig = &config.A2AConfig{
 			Enabled:   true,
 			Version:   "0.2.2",
-			ServerURL: "", // Will be set by runtime
+			ServerURL: "http://localhost:8080/", // Default server URL
 			Timeout:   30,
 		}
+	}
+
+	// Ensure ServerURL is set
+	if b.a2aConfig.ServerURL == "" {
+		b.a2aConfig.ServerURL = "http://localhost:8080/"
 	}
 
 	// Default SAGE config (disabled unless explicitly set)
@@ -316,6 +322,33 @@ func (b *Builder) validate() error {
 
 // buildAgent constructs the actual agent instance.
 func (b *Builder) buildAgent() (*agent.AgentImpl, error) {
+	// Create server based on protocol mode
+	var srv agent.Server
+	var err error
+
+	switch b.protocolMode {
+	case protocol.ProtocolA2A:
+		srv, err = b.createA2AServer()
+		if err != nil {
+			return nil, errors.ErrOperationFailed.
+				WithMessage("failed to create A2A server").
+				WithDetail("error", err.Error())
+		}
+
+	case protocol.ProtocolSAGE:
+		// TODO: Implement SAGE server creation
+		return nil, errors.ErrNotImplemented.WithMessage("SAGE protocol server not yet implemented")
+
+	case protocol.ProtocolAuto:
+		// TODO: Implement auto-detection server
+		return nil, errors.ErrNotImplemented.WithMessage("Auto protocol mode not yet implemented")
+
+	default:
+		return nil, errors.ErrInvalidInput.
+			WithMessage("unsupported protocol mode").
+			WithDetail("mode", b.protocolMode.String())
+	}
+
 	// Create agent options
 	opts := &agent.Options{
 		Name:           b.name,
@@ -331,5 +364,35 @@ func (b *Builder) buildAgent() (*agent.AgentImpl, error) {
 	}
 
 	// Create agent using agent package
-	return agent.NewAgentWithOptions(opts)
+	ag, err := agent.NewAgentWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Inject server into agent
+	if err := ag.SetServer(srv); err != nil {
+		return nil, err
+	}
+
+	return ag, nil
+}
+
+// createA2AServer creates an A2A server with the builder's configuration.
+func (b *Builder) createA2AServer() (agent.Server, error) {
+	// Build agent URL from config
+	agentURL := b.a2aConfig.ServerURL
+	if agentURL == "" {
+		return nil, errors.ErrInvalidInput.WithMessage("agent URL is required in A2A config (ServerURL field)")
+	}
+
+	// Create A2A server config
+	serverConfig := &a2a.ServerConfig{
+		AgentName:      b.name,
+		AgentURL:       agentURL,
+		Description:    "", // TODO: Add description to builder
+		MessageHandler: b.messageHandler,
+	}
+
+	// Create server
+	return a2a.NewServer(serverConfig)
 }
