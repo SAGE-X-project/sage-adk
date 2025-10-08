@@ -70,24 +70,24 @@ type A2AConfig struct {
 
 // SAGEConfig contains SAGE protocol and security settings.
 type SAGEConfig struct {
-	Enabled         bool
-	Network         string // "ethereum", "kaia", "sepolia", etc.
-	DID             string
-	RPCEndpoint     string // RPC endpoint URL
-	ContractAddress string // Smart contract address
-	PrivateKeyPath  string
-	CacheEnabled    bool
-	CacheTTL        time.Duration
+	Enabled         bool          `json:"enabled" yaml:"enabled"`
+	Network         string        `json:"network" yaml:"network"`                   // "ethereum", "kaia", "sepolia", etc.
+	DID             string        `json:"did" yaml:"did"`
+	RPCEndpoint     string        `json:"rpc_endpoint" yaml:"rpc_endpoint"`         // RPC endpoint URL
+	ContractAddress string        `json:"contract_address" yaml:"contract_address"` // Smart contract address
+	PrivateKeyPath  string        `json:"private_key_path" yaml:"private_key_path"`
+	CacheEnabled    bool          `json:"cache_enabled" yaml:"cache_enabled"`
+	CacheTTL        time.Duration `json:"cache_ttl" yaml:"cache_ttl"`
 }
 
 // LLMConfig contains LLM provider configuration.
 type LLMConfig struct {
-	Provider    string // "openai", "anthropic", "gemini"
-	APIKey      string
-	Model       string
-	MaxTokens   int
-	Temperature float64
-	Timeout     time.Duration
+	Provider    string        `json:"provider" yaml:"provider"`       // "openai", "anthropic", "gemini"
+	APIKey      string        `json:"api_key" yaml:"api_key"`
+	Model       string        `json:"model" yaml:"model"`
+	MaxTokens   int           `json:"max_tokens" yaml:"max_tokens"`
+	Temperature float64       `json:"temperature" yaml:"temperature"`
+	Timeout     time.Duration `json:"timeout" yaml:"timeout"`
 }
 
 // StorageConfig contains storage backend configuration.

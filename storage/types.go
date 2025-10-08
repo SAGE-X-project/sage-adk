@@ -19,6 +19,19 @@ package storage
 
 import (
 	"context"
+	"errors"
+)
+
+// Common errors
+var (
+	// ErrNotFound is returned when a key is not found.
+	ErrNotFound = errors.New("key not found")
+
+	// ErrInvalidNamespace is returned when namespace is invalid.
+	ErrInvalidNamespace = errors.New("invalid namespace")
+
+	// ErrInvalidKey is returned when key is invalid.
+	ErrInvalidKey = errors.New("invalid key")
 )
 
 // Storage defines the interface for data storage.

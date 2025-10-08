@@ -252,6 +252,124 @@ func (p *OpenAIProvider) SupportsStreaming() bool {
 	return true
 }
 
+// SupportsFunctionCalling returns true as OpenAI supports function calling.
+func (p *OpenAIProvider) SupportsFunctionCalling() bool {
+	return true
+}
+
+// CompleteWithTools generates a completion with tool/function calling support.
+func (p *OpenAIProvider) CompleteWithTools(ctx context.Context, req *CompletionRequestWithTools) (*CompletionResponseWithTools, error) {
+	if req == nil {
+		return nil, errors.New("completion request is nil")
+	}
+
+	// Convert tools to OpenAI format
+	tools := make([]openai.Tool, len(req.Tools))
+	for i, tool := range req.Tools {
+		tools[i] = openai.Tool{
+			Type: openai.ToolTypeFunction,
+			Function: &openai.FunctionDefinition{
+				Name:        tool.Function.Name,
+				Description: tool.Function.Description,
+				Parameters:  tool.Function.Parameters,
+			},
+		}
+	}
+
+	// Convert messages to OpenAI format
+	messages := make([]openai.ChatCompletionMessage, len(req.Messages))
+	for i, msg := range req.Messages {
+		messages[i] = openai.ChatCompletionMessage{
+			Role:    string(msg.Role),
+			Content: msg.Content,
+		}
+	}
+
+	// Determine model
+	model := req.Model
+	if model == "" {
+		model = p.model
+	}
+
+	// Create request
+	chatReq := openai.ChatCompletionRequest{
+		Model:    model,
+		Messages: messages,
+		Tools:    tools,
+	}
+
+	// Set optional parameters
+	if req.MaxTokens > 0 {
+		chatReq.MaxTokens = req.MaxTokens
+	}
+	if req.Temperature > 0 {
+		chatReq.Temperature = float32(req.Temperature)
+	}
+	if req.TopP > 0 {
+		chatReq.TopP = float32(req.TopP)
+	}
+
+	// Set tool choice if specified
+	if req.ToolChoice != nil {
+		chatReq.ToolChoice = req.ToolChoice
+	}
+
+	// Call OpenAI API
+	resp, err := p.client.CreateChatCompletion(ctx, chatReq)
+	if err != nil {
+		return nil, convertOpenAIError(err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return nil, errors.New("no completion choices returned")
+	}
+
+	choice := resp.Choices[0]
+
+	// Build response
+	result := &CompletionResponseWithTools{
+		CompletionResponse: CompletionResponse{
+			ID:           resp.ID,
+			Model:        resp.Model,
+			Content:      choice.Message.Content,
+			FinishReason: string(choice.FinishReason),
+			Usage: &Usage{
+				PromptTokens:     resp.Usage.PromptTokens,
+				CompletionTokens: resp.Usage.CompletionTokens,
+				TotalTokens:      resp.Usage.TotalTokens,
+			},
+		},
+	}
+
+	// Convert tool calls if present
+	if len(choice.Message.ToolCalls) > 0 {
+		result.ToolCalls = make([]*ToolCall, len(choice.Message.ToolCalls))
+		for i, tc := range choice.Message.ToolCalls {
+			result.ToolCalls[i] = &ToolCall{
+				ID:   tc.ID,
+				Type: ToolTypeFunction,
+				Function: &FunctionCall{
+					Name:      tc.Function.Name,
+					Arguments: tc.Function.Arguments,
+				},
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// CountTokens estimates the number of tokens in text.
+func (p *OpenAIProvider) CountTokens(text string) int {
+	counter := NewSimpleTokenCounter()
+	return counter.CountTokens(text)
+}
+
+// GetTokenLimit returns the maximum token limit for the model.
+func (p *OpenAIProvider) GetTokenLimit(model string) int {
+	return GetModelTokenLimit(model)
+}
+
 // convertOpenAIError converts OpenAI errors to user-friendly messages.
 func convertOpenAIError(err error) error {
 	if err == nil {

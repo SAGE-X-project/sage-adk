@@ -20,22 +20,19 @@
 // This package allows AI agents to store and retrieve data using a
 // unified interface that works with multiple storage backends.
 //
-// # Phase 1 Implementation
-//
-// The current implementation (Phase 1) focuses on the storage abstraction
-// and an in-memory implementation for testing and development.
+// # Implementation Status
 //
 // Implemented:
 //   - Storage interface definition
 //   - MemoryStorage implementation (in-memory, thread-safe)
+//   - RedisStorage implementation (distributed, with TTL support)
 //   - Namespace-based organization
 //   - Full CRUD operations
+//   - TTL management (Redis)
 //
 // Not Implemented (Future):
-//   - Redis backend for distributed agents
 //   - PostgreSQL backend for production deployments
 //   - Advanced querying (filtering, pagination)
-//   - TTL support for temporary data
 //   - Data versioning and migration
 //
 // # Storage Interface
@@ -199,21 +196,93 @@
 //   - Thread Safety: Safe for concurrent agent operations
 //   - Progressive Disclosure: Simple by default, powerful when needed
 //
+// # Redis Storage
+//
+// RedisStorage provides distributed storage with TTL support:
+//
+//	config := storage.DefaultRedisConfig()
+//	config.Address = "localhost:6379"
+//	config.TTL = 10 * time.Minute
+//
+//	store, err := storage.NewRedisStorage(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	defer store.Close()
+//
+//	// Store with automatic TTL
+//	store.Store(ctx, "sessions", "session:123", sessionData)
+//
+//	// Manage TTL
+//	ttl, _ := store.GetTTL(ctx, "sessions", "session:123")
+//	store.SetTTL(ctx, "sessions", "session:123", 30*time.Second)
+//
+// Characteristics:
+//   - Distributed: Share data across multiple agent instances
+//   - Persistent: Data survives process restarts
+//   - TTL Support: Automatic expiration for temporary data
+//   - JSON Serialization: Automatic marshaling/unmarshaling
+//   - Connection Pooling: Efficient resource usage
+//
+// # PostgreSQL Storage
+//
+// PostgresStorage provides production-ready persistent storage:
+//
+//	config := storage.DefaultPostgresConfig()
+//	config.Host = "localhost"
+//	config.Database = "sage"
+//	config.User = "postgres"
+//	config.Password = "postgres"
+//
+//	store, err := storage.NewPostgresStorage(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	defer store.Close()
+//
+//	// Store with automatic timestamps
+//	store.Store(ctx, "users", "user:1", userData)
+//
+//	// Get with metadata
+//	value, metadata, _ := store.GetWithMetadata(ctx, "users", "user:1")
+//	fmt.Println(metadata["created_at"])
+//
+//	// Count items
+//	count, _ := store.Count(ctx, "users")
+//
+//	// List all namespaces
+//	namespaces, _ := store.ListNamespaces(ctx)
+//
+// Characteristics:
+//   - Persistent: Data survives restarts and crashes
+//   - ACID: Transaction support (future)
+//   - Scalable: Disk-based storage
+//   - Queryable: JSONB support for complex queries
+//   - Automatic Timestamps: created_at, updated_at
+//   - Connection Pooling: Efficient resource usage
+//   - Indexes: Optimized queries on namespace and timestamps
+//
+// # Storage Backend Comparison
+//
+//	| Feature          | Memory  | Redis   | PostgreSQL |
+//	|------------------|---------|---------|------------|
+//	| Persistence      | No      | Yes     | Yes        |
+//	| Distributed      | No      | Yes     | Yes        |
+//	| TTL Support      | No      | Yes     | No*        |
+//	| Complex Queries  | No      | Limited | Yes        |
+//	| Transactions     | No      | Limited | Yes        |
+//	| Timestamps       | No      | No      | Yes        |
+//	| Best For         | Testing | Cache   | Production |
+//
+// * PostgreSQL can implement TTL with triggers or cron jobs
+//
 // # Future Enhancements
-//
-// Phase 2: Redis Backend
-//   - Distributed storage for multi-instance deployments
-//   - Pub/Sub for agent communication
-//   - TTL support for temporary data
-//
-// Phase 3: PostgreSQL Backend
-//   - Persistent storage for production
-//   - Complex querying and filtering
-//   - Transaction support
 //
 // Phase 4: Advanced Features
 //   - Pagination for large datasets
-//   - Full-text search
-//   - Data versioning
+//   - Full-text search with PostgreSQL
+//   - Data versioning and audit logs
 //   - Backup and restore utilities
+//   - Transaction support for batch operations
+//   - Query builder for complex filters
 package storage

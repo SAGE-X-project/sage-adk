@@ -140,7 +140,40 @@ func (b *Builder) WithA2AConfig(cfg *config.A2AConfig) *Builder {
 //	})
 func (b *Builder) WithSAGEConfig(cfg *config.SAGEConfig) *Builder {
 	b.sageConfig = cfg
+	if cfg != nil {
+		b.config.SAGE = *cfg
+	}
 	return b
+}
+
+// FromSAGEConfig creates a new agent builder with SAGE protocol configuration.
+//
+// This is a convenience method that automatically:
+// - Sets the protocol mode to ProtocolSAGE
+// - Configures the SAGE settings
+// - Loads the configuration into the agent
+//
+// Example:
+//
+//	agent, err := FromSAGEConfig(&config.SAGEConfig{
+//	    Enabled:         true,
+//	    DID:             "did:sage:sepolia:0x123...",
+//	    Network:         "sepolia",
+//	    RPCEndpoint:     "https://eth-sepolia.g.alchemy.com/v2/...",
+//	    ContractAddress: "0xABC...",
+//	    PrivateKeyPath:  "./keys/agent.pem",
+//	}).WithLLM(llm.OpenAI()).Build()
+func FromSAGEConfig(cfg *config.SAGEConfig) *Builder {
+	builder := &Builder{
+		name:         "sage-agent", // Default name, can be overridden
+		config:       config.NewConfig(),
+		protocolMode: protocol.ProtocolSAGE,
+		sageConfig:   cfg,
+	}
+	if cfg != nil {
+		builder.config.SAGE = *cfg
+	}
+	return builder
 }
 
 // WithStorage sets the storage backend for the agent.

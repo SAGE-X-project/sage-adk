@@ -21,9 +21,82 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"path/filepath"
 	"testing"
 	"time"
+
+	adkconfig "github.com/sage-x-project/sage-adk/config"
 )
+
+func TestNewTransportManagerFromConfig(t *testing.T) {
+	// Create temp directory for test keys
+	tmpDir := t.TempDir()
+	keyPath := filepath.Join(tmpDir, "test_key.pem")
+
+	// Generate and save a test key
+	km := NewKeyManager()
+	keyPair, err := km.Generate()
+	if err != nil {
+		t.Fatalf("Failed to generate key: %v", err)
+	}
+
+	if err := km.SaveToFile(keyPair, keyPath); err != nil {
+		t.Fatalf("Failed to save key: %v", err)
+	}
+
+	// Create test config
+	adkCfg := &adkconfig.SAGEConfig{
+		Enabled:         true,
+		Network:         "sepolia",
+		DID:             "did:sage:sepolia:0x123",
+		RPCEndpoint:     "https://test.example.com",
+		ContractAddress: "0xABC",
+		PrivateKeyPath:  keyPath,
+		CacheTTL:        1 * time.Hour,
+	}
+
+	cfg, err := FromADKConfig(adkCfg)
+	if err != nil {
+		t.Fatalf("FromADKConfig() failed: %v", err)
+	}
+
+	// Test successful creation
+	tm, err := NewTransportManagerFromConfig(cfg, km)
+	if err != nil {
+		t.Fatalf("NewTransportManagerFromConfig() error = %v", err)
+	}
+
+	if tm == nil {
+		t.Fatal("NewTransportManagerFromConfig() returned nil")
+	}
+
+	if tm.localDID != cfg.LocalDID {
+		t.Errorf("localDID = %s, want %s", tm.localDID, cfg.LocalDID)
+	}
+
+	// Test with nil config
+	_, err = NewTransportManagerFromConfig(nil, km)
+	if err == nil {
+		t.Error("NewTransportManagerFromConfig() should fail with nil config")
+	}
+
+	// Test with nil key manager
+	_, err = NewTransportManagerFromConfig(cfg, nil)
+	if err == nil {
+		t.Error("NewTransportManagerFromConfig() should fail with nil key manager")
+	}
+
+	// Test with invalid key path
+	invalidCfg := &Config{
+		Config:         cfg.Config,
+		LocalDID:       cfg.LocalDID,
+		PrivateKeyPath: "/nonexistent/key.pem",
+	}
+	_, err = NewTransportManagerFromConfig(invalidCfg, km)
+	if err == nil {
+		t.Error("NewTransportManagerFromConfig() should fail with invalid key path")
+	}
+}
 
 func TestNewTransportManager(t *testing.T) {
 	_, privateKey, _ := ed25519.GenerateKey(rand.Reader)

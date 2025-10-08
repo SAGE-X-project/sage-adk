@@ -119,3 +119,20 @@ type Provider interface {
 	// SupportsStreaming returns true if the provider supports streaming.
 	SupportsStreaming() bool
 }
+
+// AdvancedProvider extends Provider with advanced features.
+type AdvancedProvider interface {
+	Provider
+
+	// SupportsFunctionCalling returns true if the provider supports function calling.
+	SupportsFunctionCalling() bool
+
+	// CompleteWithTools generates a completion with tool/function calling support.
+	CompleteWithTools(ctx context.Context, req *CompletionRequestWithTools) (*CompletionResponseWithTools, error)
+
+	// CountTokens estimates the number of tokens in text.
+	CountTokens(text string) int
+
+	// GetTokenLimit returns the maximum token limit for the model.
+	GetTokenLimit(model string) int
+}

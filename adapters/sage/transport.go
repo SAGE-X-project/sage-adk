@@ -101,6 +101,50 @@ func NewTransportManager(
 	}
 }
 
+// NewTransportManagerFromConfig creates a new transport manager from SAGE config.
+// This is the recommended way to create a transport manager with proper key management.
+func NewTransportManagerFromConfig(cfg *Config, keyManager *KeyManager) (*TransportManager, error) {
+	if cfg == nil {
+		return nil, errors.ErrInvalidInput.WithMessage("config cannot be nil")
+	}
+	if keyManager == nil {
+		return nil, errors.ErrInvalidInput.WithMessage("key manager cannot be nil")
+	}
+
+	// Validate config
+	if err := cfg.Validate(); err != nil {
+		return nil, errors.ErrInvalidInput.
+			WithMessage("invalid config").
+			WithDetail("error", err.Error())
+	}
+
+	// Load private key from file
+	keyPair, err := keyManager.LoadFromFile(cfg.PrivateKeyPath)
+	if err != nil {
+		return nil, errors.ErrOperationFailed.
+			WithMessage("failed to load private key").
+			WithDetail("path", cfg.PrivateKeyPath).
+			WithDetail("error", err.Error())
+	}
+
+	// Extract Ed25519 private key
+	privateKey, err := keyManager.ExtractEd25519PrivateKey(keyPair)
+	if err != nil {
+		return nil, errors.ErrOperationFailed.
+			WithMessage("failed to extract Ed25519 private key").
+			WithDetail("error", err.Error())
+	}
+
+	// Create transport config from SAGE config
+	transportConfig := &TransportConfig{
+		SessionTTL:      cfg.DID.CacheTTL, // Reuse DID cache TTL for sessions
+		MaxClockSkew:    5 * time.Minute,
+		HandshakeTimeout: 30 * time.Second,
+	}
+
+	return NewTransportManager(cfg.LocalDID, privateKey, transportConfig), nil
+}
+
 // SetMessageHandler sets the handler for incoming application messages.
 func (tm *TransportManager) SetMessageHandler(handler MessageHandler) {
 	tm.messageHandler = handler

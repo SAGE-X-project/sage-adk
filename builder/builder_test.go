@@ -354,6 +354,75 @@ func TestBuilder_FullyConfigured(t *testing.T) {
 	}
 }
 
+func TestFromSAGEConfig(t *testing.T) {
+	sageCfg := &config.SAGEConfig{
+		Enabled:         true,
+		DID:             "did:sage:sepolia:0x123",
+		Network:         "sepolia",
+		RPCEndpoint:     "https://sepolia.example.com",
+		ContractAddress: "0xABC",
+		PrivateKeyPath:  "./keys/test.pem",
+	}
+
+	builder := FromSAGEConfig(sageCfg)
+
+	if builder == nil {
+		t.Fatal("FromSAGEConfig() returned nil")
+	}
+
+	if builder.protocolMode != protocol.ProtocolSAGE {
+		t.Errorf("protocol mode = %v, want ProtocolSAGE", builder.protocolMode)
+	}
+
+	if builder.sageConfig != sageCfg {
+		t.Error("SAGE config not set")
+	}
+
+	if builder.config.SAGE.DID != sageCfg.DID {
+		t.Error("SAGE config not set in main config")
+	}
+
+	// Test that builder can be further configured
+	builder2 := FromSAGEConfig(sageCfg).
+		WithLLM(llm.NewMockProvider("test", []string{"response"})).
+		WithStorage(storage.NewMemoryStorage())
+
+	if builder2.llmProvider == nil {
+		t.Error("LLM provider not set")
+	}
+
+	if builder2.storageBackend == nil {
+		t.Error("Storage backend not set")
+	}
+}
+
+func TestBuilder_WithSAGEConfig(t *testing.T) {
+	sageCfg := &config.SAGEConfig{
+		Enabled:         true,
+		DID:             "did:sage:ethereum:0x456",
+		Network:         "ethereum",
+		RPCEndpoint:     "https://eth.example.com",
+		ContractAddress: "0xDEF",
+		PrivateKeyPath:  "./keys/test2.pem",
+	}
+
+	builder := NewAgent("test-agent").
+		WithProtocol(protocol.ProtocolSAGE).
+		WithSAGEConfig(sageCfg)
+
+	if builder.sageConfig != sageCfg {
+		t.Error("SAGE config not set")
+	}
+
+	if builder.config.SAGE.DID != sageCfg.DID {
+		t.Error("SAGE config not set in main config")
+	}
+
+	if builder.protocolMode != protocol.ProtocolSAGE {
+		t.Errorf("protocol mode = %v, want ProtocolSAGE", builder.protocolMode)
+	}
+}
+
 func TestBuilder_Idempotent(t *testing.T) {
 	// Building multiple times should work
 	builder := NewAgent("idempotent").
