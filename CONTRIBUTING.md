@@ -228,8 +228,6 @@ Maintainers handle releases:
 ## Questions?
 
 - Open a [Discussion](https://github.com/sage-x-project/sage-adk/discussions)
-- Join our community chat
-- Email: support@sage-x-project.org
 
 ## License
 
