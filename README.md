@@ -1,7 +1,7 @@
 # SAGE ADK - Agent Development Kit
 
 [![Go Version](https://img.shields.io/badge/Go-1.21%2B-blue.svg)](https://golang.org/dl/)
-[![License](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg)](LICENSE)
 [![A2A Protocol](https://img.shields.io/badge/A2A-v0.2.2-green.svg)](https://github.com/google/a2a-protocol)
 [![SAGE Protocol](https://img.shields.io/badge/SAGE-v1.0.0-orange.svg)](https://github.com/sage-x-project/sage)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/sage-x-project/sage-adk)
@@ -464,24 +464,51 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## License
 
-This project is licensed under the **GNU Lesser General Public License v3.0 (LGPL-3.0)**.
+This project is licensed under the **GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later)**.
+
+SPDX-License-Identifier: `LGPL-3.0-or-later`
+
+### What This Means For You
 
 **You CAN:**
--  Use in commercial applications
--  Use in proprietary software
--  Modify for your needs
--  Distribute
+- Use SAGE ADK in commercial applications
+- Use SAGE ADK in proprietary software
+- Modify SAGE ADK for your needs
+- Distribute applications using SAGE ADK
+- Choose to follow LGPL-3.0 or any later version
 
 **You MUST:**
-- Provide SAGE ADK source if you distribute it
-- Allow users to replace/relink the library
-- Maintain LGPL-3.0 license notices
+- Provide SAGE ADK source code if you distribute modified versions
+- Allow users to replace/relink SAGE ADK library
+- Maintain LGPL-3.0-or-later license notices in SAGE ADK code
+- Comply with licenses of third-party dependencies (see [NOTICE](NOTICE))
 
 **You DON'T Need To:**
--  Open-source your application
--  Release your app under LGPL-3.0
+- Open-source your application code
+- Release your application under LGPL-3.0
+- Share your proprietary business logic
 
-See [LICENSE](LICENSE) for details.
+### Third-Party Components
+
+SAGE ADK depends on several open-source projects with compatible licenses:
+- **sage** (LGPL-3.0-or-later)
+- **sage-a2a-go** (Apache-2.0)
+- **go-ethereum** (LGPL-3.0/GPL-3.0)
+- **Prometheus Client** (Apache-2.0)
+- Others (MIT, BSD) - see [NOTICE](NOTICE) file
+
+### License Compatibility
+
+The LGPL-3.0-or-later license:
+- Allows library usage in proprietary applications
+- Compatible with Apache-2.0, MIT, BSD licenses
+- Meets requirements for go-ethereum dependency
+- Ensures modifications to SAGE ADK remain open-source
+
+For complete details:
+- [LICENSE](LICENSE) - Full license text
+- [NOTICE](NOTICE) - Third-party components
+- [SPDX LGPL-3.0-or-later](https://spdx.org/licenses/LGPL-3.0-or-later.html) - Official reference
 
 ## Support
 
