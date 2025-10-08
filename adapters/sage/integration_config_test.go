@@ -23,6 +23,7 @@ import (
 	"time"
 
 	adkconfig "github.com/sage-x-project/sage-adk/config"
+	"github.com/sage-x-project/sage/crypto"
 )
 
 // TestIntegration_ConfigToTransport tests the full integration from ADK config to TransportManager.
@@ -167,7 +168,7 @@ func TestIntegration_KeyManagerRoundTrip(t *testing.T) {
 		}
 
 		// Save as JWK
-		if err := km.SaveToFileWithFormat(original, keyPath, "jwk"); err != nil {
+		if err := km.SaveToFileWithFormat(original, keyPath, crypto.KeyFormatJWK); err != nil {
 			t.Fatalf("SaveToFileWithFormat() failed: %v", err)
 		}
 

@@ -60,24 +60,24 @@ install: ## Install the binary to $GOPATH/bin
 .PHONY: test
 test: ## Run tests
 	@echo "$(BLUE)Running tests...$(NC)"
-	$(GO) test -v -race ./...
+	$(GO) test -v -race -timeout 10m ./...
 
 .PHONY: test-short
 test-short: ## Run short tests only
 	@echo "$(BLUE)Running short tests...$(NC)"
-	$(GO) test -v -short ./...
+	$(GO) test -v -short -timeout 5m ./...
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
-	$(GO) test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+	$(GO) test -v -race -timeout 10m -coverprofile=coverage.txt -covermode=atomic ./...
 	$(GO) tool cover -html=coverage.txt -o coverage.html
 	@echo "$(GREEN)Coverage report: coverage.html$(NC)"
 
 .PHONY: test-integration
 test-integration: ## Run integration tests
 	@echo "$(BLUE)Running integration tests...$(NC)"
-	$(GO) test -v -tags=integration ./test/integration/...
+	$(GO) test -v -timeout 10m -tags=integration ./test/integration/...
 
 .PHONY: bench
 bench: ## Run benchmarks

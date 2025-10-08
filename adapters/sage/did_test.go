@@ -32,6 +32,7 @@ import (
 type mockResolver struct {
 	resolveFunc           func(ctx context.Context, did did.AgentDID) (*did.AgentMetadata, error)
 	resolvePublicKeyFunc  func(ctx context.Context, did did.AgentDID) (interface{}, error)
+	resolveKEMKeyFunc     func(ctx context.Context, did did.AgentDID) (interface{}, error)
 	verifyMetadataFunc    func(ctx context.Context, did did.AgentDID, metadata *did.AgentMetadata) (*did.VerificationResult, error)
 	listAgentsByOwnerFunc func(ctx context.Context, ownerAddress string) ([]*did.AgentMetadata, error)
 	searchFunc            func(ctx context.Context, criteria did.SearchCriteria) ([]*did.AgentMetadata, error)
@@ -47,6 +48,13 @@ func (m *mockResolver) Resolve(ctx context.Context, agentDID did.AgentDID) (*did
 func (m *mockResolver) ResolvePublicKey(ctx context.Context, agentDID did.AgentDID) (interface{}, error) {
 	if m.resolvePublicKeyFunc != nil {
 		return m.resolvePublicKeyFunc(ctx, agentDID)
+	}
+	return nil, did.ErrDIDNotFound
+}
+
+func (m *mockResolver) ResolveKEMKey(ctx context.Context, agentDID did.AgentDID) (interface{}, error) {
+	if m.resolveKEMKeyFunc != nil {
+		return m.resolveKEMKeyFunc(ctx, agentDID)
 	}
 	return nil, did.ErrDIDNotFound
 }
