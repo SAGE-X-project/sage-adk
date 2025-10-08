@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sage-agent-config
+  namespace: sage-system
+  labels:
+    app: sage-agent
+data:
+  # LLM Configuration
+  llm-provider: "openai"
+  llm-model: "gpt-3.5-turbo"
+
+  # Storage Configuration
+  storage-type: "postgres"
+  postgres-host: "postgres.sage-system.svc.cluster.local"
+  postgres-port: "5432"
+  postgres-database: "sage"
+
+  # Redis Configuration (if using Redis storage)
+  redis-host: "redis.sage-system.svc.cluster.local"
+  redis-port: "6379"
+
+  # Observability Configuration
+  log-level: "info"
+  tracing-endpoint: "http://jaeger-collector.observability.svc.cluster.local:14268/api/traces"
+
+  # Rate Limiting
+  ratelimit-enabled: "true"
+  ratelimit-strategy: "token_bucket"
+  ratelimit-requests-per-minute: "100"
+
+  # Performance
+  worker-pool-size: "100"
+  max-concurrent: "1000"
+  cache-enabled: "true"
+  cache-ttl: "300"
+
+  # Advanced Configuration
+  config.yaml: |
+    agent:
+      id: "${SAGE_AGENT_ID}"
+      protocol: a2a
+
+    llm:
+      provider: openai
+      model: gpt-3.5-turbo
+      temperature: 0.7
+      max_tokens: 2000
+
+    storage:
+      type: postgres
+      postgres:
+        host: postgres.sage-system.svc.cluster.local
+        port: 5432
+        database: sage
+        ssl_mode: require
+        max_open_conns: 25
+        max_idle_conns: 5
+        conn_max_lifetime: 300
+
+    observability:
+      metrics:
+        enabled: true
+        port: 9090
+        path: /metrics
+      logging:
+        level: info
+        format: json
+        output: stdout
+      tracing:
+        enabled: true
+        endpoint: http://jaeger-collector.observability.svc.cluster.local:14268/api/traces
+        service_name: sage-agent
+        sampling_rate: 0.1
+      health:
+        enabled: true
+        port: 8080
+        liveness_path: /health/live
+        readiness_path: /health/ready
+        startup_path: /health/startup
+
+    ratelimit:
+      enabled: true
+      strategy: token_bucket
+      storage: redis
+      global:
+        requests_per_minute: 1000
+        requests_per_hour: 50000
+      per_user:
+        requests_per_minute: 100
+        requests_per_hour: 5000
+      llm_providers:
+        openai:
+          requests_per_minute: 3500
+          tokens_per_minute: 90000
+
+    performance:
+      connection_pool:
+        max_open_conns: 25
+        max_idle_conns: 5
+        conn_max_lifetime: 300
+      cache:
+        enabled: true
+        response_cache: true
+        did_cache: true
+        ttl: 300
+      concurrency:
+        worker_pool_size: 100
+        max_concurrent: 1000
+        queue_size: 10000
+
+    recovery:
+      retry:
+        max_attempts: 3
+        initial_delay: 1
+        max_delay: 30
+        jitter: true
+        backoff_multiplier: 2.0
+      fallback:
+        enabled: true
+        llm_chain:
+          - provider: openai
+            model: gpt-4
+            priority: 1
+          - provider: openai
+            model: gpt-3.5-turbo
+            priority: 2
+          - provider: anthropic
+            model: claude-3-sonnet-20240229
+            priority: 3
+      dlq:
+        enabled: true
+        storage: redis
+        max_size: 10000
+        retention_hours: 24

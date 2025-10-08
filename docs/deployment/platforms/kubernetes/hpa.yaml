@@ -1,0 +1,103 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sage-agent-hpa
+  namespace: sage-system
+  labels:
+    app: sage-agent
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sage-agent
+
+  minReplicas: 3
+  maxReplicas: 20
+
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+  # Custom metrics (requires metrics-server and custom metrics API)
+  # Request rate-based scaling
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "1000"  # Scale when >1000 RPS per pod
+
+  # LLM usage-based scaling
+  - type: Pods
+    pods:
+      metric:
+        name: llm_api_calls_per_minute
+      target:
+        type: AverageValue
+        averageValue: "100"  # Scale when >100 LLM calls/min per pod
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 4
+        periodSeconds: 60
+      selectPolicy: Max
+
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Min
+
+---
+# Vertical Pod Autoscaler (optional, requires VPA)
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: sage-agent-vpa
+  namespace: sage-system
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sage-agent
+
+  updatePolicy:
+    updateMode: "Auto"  # Auto, Recreate, Initial, or Off
+
+  resourcePolicy:
+    containerPolicies:
+    - containerName: sage-agent
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 2
+        memory: 2Gi
+      controlledResources:
+      - cpu
+      - memory
