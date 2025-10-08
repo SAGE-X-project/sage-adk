@@ -114,6 +114,41 @@ run: ## Run the application
 	@echo "$(BLUE)Running $(BINARY_NAME)...$(NC)"
 	$(GO) run ./cmd/adk
 
+.PHONY: examples
+examples: ## Build all examples
+	@echo "$(BLUE)Building all examples...$(NC)"
+	@mkdir -p $(BUILD_DIR)/bin/examples
+	@for dir in examples/*/; do \
+		if [ -f "$$dir/main.go" ]; then \
+			example=$$(basename $$dir); \
+			echo "Building $$example..."; \
+			cd "$$dir" && $(GO) build $(GOFLAGS) -o ../../$(BUILD_DIR)/bin/examples/$$example . || exit 1; \
+		fi \
+	done
+	@echo "$(GREEN)All examples built in $(BUILD_DIR)/bin/examples/$(NC)"
+
+.PHONY: example-%
+example-%: ## Build specific example (e.g., make example-observability)
+	@echo "$(BLUE)Building example: $*...$(NC)"
+	@mkdir -p $(BUILD_DIR)/bin/examples
+	@if [ -d "examples/$*" ]; then \
+		cd examples/$* && $(GO) build $(GOFLAGS) -o ../../$(BUILD_DIR)/bin/examples/$* .; \
+		echo "$(GREEN)Example built: $(BUILD_DIR)/bin/examples/$*$(NC)"; \
+	else \
+		echo "$(RED)Example $* not found$(NC)"; \
+		exit 1; \
+	fi
+
+.PHONY: run-example-%
+run-example-%: ## Run specific example (e.g., make run-example-observability)
+	@echo "$(BLUE)Running example: $*...$(NC)"
+	@if [ -f "$(BUILD_DIR)/bin/examples/$*" ]; then \
+		$(BUILD_DIR)/bin/examples/$*; \
+	else \
+		echo "$(YELLOW)Building $* first...$(NC)"; \
+		$(MAKE) example-$* && $(BUILD_DIR)/bin/examples/$*; \
+	fi
+
 .PHONY: run-example-simple
 run-example-simple: ## Run simple example
 	@echo "$(BLUE)Running simple agent example...$(NC)"
