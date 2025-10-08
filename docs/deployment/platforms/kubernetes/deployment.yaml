@@ -1,0 +1,257 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sage-agent
+  namespace: sage-system
+  labels:
+    app: sage-agent
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sage-agent
+  template:
+    metadata:
+      labels:
+        app: sage-agent
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: sage-agent
+
+      # Init container for migrations or setup
+      initContainers:
+      - name: init-db
+        image: sage-agent:v1.0.0
+        command: ['sh', '-c', 'echo "Database migration placeholder"']
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: sage-agent-secrets
+              key: database-url
+
+      containers:
+      - name: sage-agent
+        image: sage-agent:v1.0.0
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        - name: profiling
+          containerPort: 6060
+          protocol: TCP
+
+        env:
+        # Agent Configuration
+        - name: SAGE_AGENT_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+
+        - name: SAGE_PROTOCOL
+          value: "a2a"
+
+        # LLM Configuration
+        - name: SAGE_LLM_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: llm-provider
+
+        - name: SAGE_LLM_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: llm-model
+
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sage-agent-secrets
+              key: openai-api-key
+
+        # Storage Configuration
+        - name: SAGE_STORAGE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: storage-type
+
+        - name: SAGE_POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: postgres-host
+
+        - name: SAGE_POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: postgres-port
+
+        - name: SAGE_POSTGRES_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: postgres-database
+
+        - name: SAGE_POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: sage-agent-secrets
+              key: postgres-user
+
+        - name: SAGE_POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sage-agent-secrets
+              key: postgres-password
+
+        # Observability Configuration
+        - name: SAGE_OBSERVABILITY_ENABLED
+          value: "true"
+
+        - name: SAGE_METRICS_ENABLED
+          value: "true"
+
+        - name: SAGE_METRICS_PORT
+          value: "9090"
+
+        - name: SAGE_LOGGING_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: log-level
+
+        - name: SAGE_LOGGING_FORMAT
+          value: "json"
+
+        - name: SAGE_TRACING_ENABLED
+          value: "true"
+
+        - name: SAGE_TRACING_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: sage-agent-config
+              key: tracing-endpoint
+
+        # Rate Limiting
+        - name: SAGE_RATELIMIT_ENABLED
+          value: "true"
+
+        - name: SAGE_RATELIMIT_REQUESTS_PER_MINUTE
+          value: "100"
+
+        # Performance
+        - name: SAGE_WORKER_POOL_SIZE
+          value: "100"
+
+        - name: SAGE_MAX_CONCURRENT
+          value: "1000"
+
+        # Health Check Configuration
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30  # 30 * 5 = 150 seconds max startup time
+
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+
+        # Volume mounts
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: config
+          mountPath: /etc/sage-agent
+          readOnly: true
+        - name: cache
+          mountPath: /var/cache/sage-agent
+
+      # Volumes
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: sage-agent-config
+      - name: cache
+        emptyDir: {}
+
+      # Pod anti-affinity for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - sage-agent
+              topologyKey: kubernetes.io/hostname
+
+      # Tolerations
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300

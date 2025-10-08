@@ -1,0 +1,77 @@
+SAGE ADK - Agent Development Kit
+Copyright (C) 2025 sage-x-project
+
+This product includes software developed by sage-x-project
+(https://github.com/sage-x-project).
+
+================================================================================
+
+This product bundles or depends on the following third-party software:
+
+--------------------------------------------------------------------------------
+sage (LGPL-3.0-or-later)
+Copyright (C) 2025 sage-x-project
+https://github.com/sage-x-project/sage
+
+Secure Agent Guarantee Engine for blockchain-based identity and cryptographic
+message verification.
+
+--------------------------------------------------------------------------------
+sage-a2a-go (Apache-2.0)
+Copyright (C) 2025 Tencent
+https://github.com/sage-x-project/sage-a2a-go
+
+trpc-a2a-go implementation for Agent-to-Agent protocol.
+
+--------------------------------------------------------------------------------
+go-ethereum (LGPL-3.0 / GPL-3.0)
+Copyright (C) 2015-2024 The go-ethereum Authors
+https://github.com/ethereum/go-ethereum
+
+Official Go implementation of the Ethereum protocol.
+
+--------------------------------------------------------------------------------
+Prometheus Client for Go (Apache-2.0)
+Copyright 2012-2015 The Prometheus Authors
+https://github.com/prometheus/client_golang
+
+Prometheus instrumentation library for Go applications.
+
+--------------------------------------------------------------------------------
+go-openai (Apache-2.0)
+Copyright (c) 2022 sashabaranov
+https://github.com/sashabaranov/go-openai
+
+OpenAI ChatGPT, GPT-3, GPT-4, DALL·E, Whisper API wrapper for Go.
+
+--------------------------------------------------------------------------------
+go-redis (BSD-2-Clause)
+Copyright (c) 2013 The github.com/redis/go-redis Authors
+https://github.com/redis/go-redis
+
+Type-safe Redis client for Golang.
+
+--------------------------------------------------------------------------------
+lib/pq (MIT)
+Copyright (c) 2011-2013, 'pq' Contributors
+https://github.com/lib/pq
+
+Pure Go Postgres driver for database/sql.
+
+--------------------------------------------------------------------------------
+uuid (BSD-3-Clause)
+Copyright (c) 2009,2014 Google Inc.
+https://github.com/google/uuid
+
+Go package for UUIDs based on RFC 4122 and DCE 1.1.
+
+================================================================================
+
+For a complete list of dependencies and their licenses, please check:
+- The LICENSE file in this distribution
+- The go.mod file for all dependencies
+- Each dependency's repository for detailed license information
+
+================================================================================
+
+SPDX-License-Identifier: LGPL-3.0-or-later

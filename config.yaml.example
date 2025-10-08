@@ -1,0 +1,222 @@
+# SAGE ADK Configuration File
+# This is an example configuration file in YAML format
+# Copy to config.yaml and customize for your needs
+
+# Agent Configuration
+agent:
+  name: "my-agent"
+  description: "My AI Agent"
+  version: "1.0.0"
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8080
+  timeout: "30s"
+  max_body_size: "10MB"
+
+  # CORS Configuration
+  cors:
+    enabled: true
+    allowed_origins:
+      - "*"
+    allowed_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    allowed_headers:
+      - "Content-Type"
+      - "Authorization"
+    max_age: 3600
+
+# Protocol Configuration
+protocol:
+  # Options: a2a | sage | auto
+  mode: "auto"
+
+# A2A Protocol Configuration
+a2a:
+  protocol_version: "0.2.2"
+
+  # Storage Configuration
+  storage:
+    # Options: memory | redis | postgres
+    type: "memory"
+    ttl: "1h"
+    max_history_length: 100
+
+  # Redis Configuration (when storage.type = redis)
+  redis:
+    url: "redis://localhost:6379"
+    password: ""
+    db: 0
+    pool_size: 10
+
+  # PostgreSQL Configuration (when storage.type = postgres)
+  postgres:
+    url: "postgresql://user:password@localhost:5432/adk?sslmode=disable"
+    max_connections: 20
+    idle_connections: 5
+
+# SAGE Security Configuration
+sage:
+  enabled: false
+
+  # Agent DID (Decentralized Identifier)
+  # Format: did:sage:<network>:<address>
+  did: ""
+
+  # Blockchain Network
+  # Options: ethereum | sepolia | kaia | kairos | local
+  network: "local"
+
+  # Blockchain Configuration
+  blockchain:
+    # Ethereum Mainnet
+    ethereum:
+      rpc_url: "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+      contract_address: ""
+      chain_id: 1
+
+    # Ethereum Sepolia Testnet
+    sepolia:
+      rpc_url: "https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY"
+      contract_address: ""
+      chain_id: 11155111
+
+    # Kaia Mainnet (Cypress)
+    kaia:
+      rpc_url: "https://public-en-cypress.klaytn.net"
+      contract_address: ""
+      chain_id: 8217
+
+    # Kaia Testnet (Kairos)
+    kairos:
+      rpc_url: "https://public-en-kairos.node.kaia.io"
+      contract_address: ""
+      chain_id: 1001
+
+    # Local Development (Hardhat/Ganache)
+    local:
+      rpc_url: "http://127.0.0.1:8545"
+      contract_address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      chain_id: 31337
+
+  # Security Features
+  security:
+    handshake_enabled: true
+    encryption_enabled: true
+    signature_required: true
+
+  # Session Configuration
+  session:
+    max_age: "1h"
+    idle_timeout: "10m"
+
+  # Nonce Cache (Replay Protection)
+  nonce:
+    cache_size: 10000
+    cache_ttl: "5m"
+
+  # DID Cache
+  cache:
+    did_cache_enabled: true
+    did_cache_ttl: "1h"
+    did_cache_size: 1000
+
+# LLM Configuration
+llm:
+  # Provider Selection
+  # Options: openai | anthropic | gemini
+  provider: "openai"
+
+  # Model Configuration
+  model: "gpt-4"
+  max_tokens: 2048
+  temperature: 0.7
+  top_p: 1.0
+
+  # OpenAI Configuration
+  openai:
+    api_key: ""
+    org_id: ""
+    base_url: "https://api.openai.com/v1"
+
+  # Anthropic Configuration
+  anthropic:
+    api_key: ""
+    version: "2023-06-01"
+
+  # Google Gemini Configuration
+  gemini:
+    api_key: ""
+    project_id: ""
+    location: "us-central1"
+
+  # Retry & Timeout
+  retry:
+    max_retries: 3
+    timeout: "30s"
+    retry_delay: "1s"
+
+# Logging Configuration
+logging:
+  # Log Level
+  # Options: debug | info | warn | error
+  level: "info"
+
+  # Log Format
+  # Options: json | text
+  format: "json"
+
+  # Output
+  # Options: stdout | stderr | file
+  output: "stdout"
+
+  # File path (when output = file)
+  file_path: "/var/log/adk/agent.log"
+
+# Metrics Configuration
+metrics:
+  enabled: true
+  port: 9090
+  path: "/metrics"
+
+# Health Check Configuration
+health:
+  enabled: true
+  path: "/health"
+
+# OpenTelemetry Configuration
+telemetry:
+  enabled: false
+  otlp_endpoint: "http://localhost:4317"
+  service_name: "sage-adk-agent"
+
+# Authentication Configuration
+auth:
+  enabled: false
+
+  # Auth Type
+  # Options: api_key | jwt | oauth2
+  type: "api_key"
+
+  # API Key Authentication
+  api_key:
+    header_name: "X-API-Key"
+    key: ""
+
+  # JWT Authentication
+  jwt:
+    secret: ""
+    issuer: "sage-adk"
+    audience: "sage-adk-agent"
+    expiry: "24h"
+
+# Rate Limiting Configuration
+rate_limit:
+  enabled: true
+  requests: 100
+  window: "1m"
