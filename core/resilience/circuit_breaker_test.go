@@ -20,6 +20,7 @@ package resilience
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 )
@@ -243,16 +244,21 @@ func TestCircuitBreaker_Reset(t *testing.T) {
 }
 
 func TestCircuitBreaker_OnStateChange(t *testing.T) {
-	var transitions []struct {
-		from State
-		to   State
-	}
+	var (
+		transitions []struct {
+			from State
+			to   State
+		}
+		mu sync.Mutex
+	)
 
 	config := &CircuitBreakerConfig{
 		MaxFailures:         2,
 		Timeout:             50 * time.Millisecond,
 		MaxHalfOpenRequests: 1,
 		OnStateChange: func(from, to State) {
+			mu.Lock()
+			defer mu.Unlock()
 			transitions = append(transitions, struct {
 				from State
 				to   State
@@ -280,15 +286,21 @@ func TestCircuitBreaker_OnStateChange(t *testing.T) {
 	// Give callbacks time to execute
 	time.Sleep(50 * time.Millisecond)
 
-	if len(transitions) < 2 {
-		t.Errorf("transitions = %d, want at least 2", len(transitions))
+	mu.Lock()
+	numTransitions := len(transitions)
+	mu.Unlock()
+
+	if numTransitions < 2 {
+		t.Errorf("transitions = %d, want at least 2", numTransitions)
 	}
 
 	// Check first transition (Closed -> Open)
-	if transitions[0].from != StateClosed || transitions[0].to != StateOpen {
+	mu.Lock()
+	if len(transitions) > 0 && (transitions[0].from != StateClosed || transitions[0].to != StateOpen) {
 		t.Errorf("first transition = %v -> %v, want Closed -> Open",
 			transitions[0].from, transitions[0].to)
 	}
+	mu.Unlock()
 }
 
 func TestCircuitBreaker_DefaultConfig(t *testing.T) {

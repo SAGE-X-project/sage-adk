@@ -26,7 +26,33 @@ import (
 	"github.com/sage-x-project/sage-adk/pkg/errors"
 	"github.com/sage-x-project/sage-adk/pkg/types"
 	"github.com/sage-x-project/sage/core"
+	sagecrypto "github.com/sage-x-project/sage/crypto"
+	"github.com/sage-x-project/sage/crypto/formats"
+	"github.com/sage-x-project/sage/crypto/keys"
+	"github.com/sage-x-project/sage/crypto/storage"
 )
+
+func init() {
+	// Initialize SAGE crypto format handlers (JWK, PEM)
+	// This allows sage-adk to use all crypto formats supported by SAGE
+	sagecrypto.SetFormatConstructors(
+		func() sagecrypto.KeyExporter { return formats.NewJWKExporter() },
+		func() sagecrypto.KeyExporter { return formats.NewPEMExporter() },
+		func() sagecrypto.KeyImporter { return formats.NewJWKImporter() },
+		func() sagecrypto.KeyImporter { return formats.NewPEMImporter() },
+	)
+
+	// Initialize key generators
+	sagecrypto.SetKeyGenerators(
+		func() (sagecrypto.KeyPair, error) { return keys.GenerateEd25519KeyPair() },
+		func() (sagecrypto.KeyPair, error) { return keys.GenerateSecp256k1KeyPair() },
+	)
+
+	// Initialize storage constructors
+	sagecrypto.SetStorageConstructors(
+		func() sagecrypto.KeyStorage { return storage.NewMemoryKeyStorage() },
+	)
+}
 
 // Adapter implements the ProtocolAdapter interface for SAGE protocol.
 // Phase 1: Basic structure with verification only.

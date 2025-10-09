@@ -45,6 +45,19 @@ func (a *ethereumResolverAdapter) ResolvePublicKey(ctx context.Context, agentDID
 	return interface{}(key), nil
 }
 
+func (a *ethereumResolverAdapter) ResolveKEMKey(ctx context.Context, agentDID did.AgentDID) (interface{}, error) {
+	metadata, err := a.client.Resolve(ctx, agentDID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !metadata.IsActive {
+		return nil, fmt.Errorf("agent DID %s is not active", agentDID)
+	}
+
+	return metadata.PublicKEMKey, nil
+}
+
 func (a *ethereumResolverAdapter) VerifyMetadata(ctx context.Context, agentDID did.AgentDID, metadata *did.AgentMetadata) (*did.VerificationResult, error) {
 	return a.client.VerifyMetadata(ctx, agentDID, metadata)
 }
