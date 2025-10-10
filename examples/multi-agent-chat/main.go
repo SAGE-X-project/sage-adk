@@ -186,10 +186,9 @@ func startCoordinatorAgent(ctx context.Context, store storage.Storage) *agent.Ag
 		log.Fatalf("Failed to create coordinator: %v", err)
 	}
 
-	impl := agentInstance.(*agent.AgentImpl)
-	go impl.Start(coordinatorPort)
+	go agentInstance.Start(coordinatorPort)
 
-	return impl
+	return agentInstance
 }
 
 // startMathAgent starts the math specialist agent
@@ -253,10 +252,9 @@ func createSpecialistAgent(name, description string, handler agent.MessageHandle
 		log.Fatalf("Failed to create %s: %v", name, err)
 	}
 
-	impl := agentInstance.(*agent.AgentImpl)
-	go impl.Start(port)
+	go agentInstance.Start(port)
 
-	return impl
+	return agentInstance
 }
 
 // runDemo runs an interactive demonstration

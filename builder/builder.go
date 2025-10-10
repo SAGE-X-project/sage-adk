@@ -41,8 +41,10 @@ import (
 // Inspired by Cosmos SDK's app builder pattern.
 type Builder struct {
 	// Agent configuration
-	name   string
-	config *config.Config
+	name        string
+	description string
+	version     string
+	config      *config.Config
 
 	// Protocol configuration
 	protocolMode protocol.ProtocolMode
@@ -86,6 +88,26 @@ func NewAgent(name string) *Builder {
 		config:       config.NewConfig(),
 		protocolMode: protocol.ProtocolA2A, // Default to A2A
 	}
+}
+
+// WithDescription sets the agent description.
+//
+// Example:
+//
+//	builder.WithDescription("A helpful AI assistant")
+func (b *Builder) WithDescription(desc string) *Builder {
+	b.description = desc
+	return b
+}
+
+// WithVersion sets the agent version.
+//
+// Example:
+//
+//	builder.WithVersion("1.0.0")
+func (b *Builder) WithVersion(version string) *Builder {
+	b.version = version
+	return b
 }
 
 // WithLLM sets the LLM provider for the agent.
@@ -450,6 +472,8 @@ func (b *Builder) buildAgent() (*agent.AgentImpl, error) {
 	// Create agent options
 	opts := &agent.Options{
 		Name:           b.name,
+		Description:    b.description,
+		Version:        b.version,
 		Config:         b.config,
 		ProtocolMode:   b.protocolMode,
 		A2AConfig:      b.a2aConfig,
@@ -487,7 +511,7 @@ func (b *Builder) createA2AServer() (agent.Server, error) {
 	serverConfig := &a2a.ServerConfig{
 		AgentName:      b.name,
 		AgentURL:       agentURL,
-		Description:    "", // TODO: Add description to builder
+		Description:    b.description,
 		MessageHandler: b.messageHandler,
 	}
 
