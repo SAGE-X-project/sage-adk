@@ -7,7 +7,6 @@ toolchain go1.24.7
 // Utilities
 require (
 	github.com/google/uuid v1.6.0
-	github.com/sage-x-project/sage v0.0.0
 	trpc.group/trpc-go/trpc-a2a-go v0.0.0
 )
 
@@ -16,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sashabaranov/go-openai v1.41.2
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/crypto v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
 	lukechampine.com/blake3 v1.4.1
@@ -40,6 +39,8 @@ require (
 	github.com/ethereum/go-ethereum v1.16.1 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
@@ -61,6 +62,12 @@ require (
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/otel v1.35.0 // indirect
+	go.opentelemetry.io/otel/exporters/jaeger v1.17.0 // indirect
+	go.opentelemetry.io/otel/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.17.0 // indirect
+	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
@@ -75,3 +82,6 @@ replace (
 	github.com/sage-x-project/sage => ../../sage
 	trpc.group/trpc-go/trpc-a2a-go => ../sage-a2a-go
 )
+
+// Fix genproto version conflicts
+replace google.golang.org/genproto => google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074

@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SAGE ADK Rate Limiting Example ===\n")
+	fmt.Println("=== SAGE ADK Rate Limiting Example ===")
 
 	// Run examples
 	tokenBucketExample()
@@ -140,7 +140,7 @@ func middlewareExample() {
 	// Create handler
 	handler := func(ctx context.Context, msg *types.Message) (*types.Message, error) {
 		return types.NewMessage(
-			types.MessageRoleAssistant,
+			"assistant",
 			[]types.Part{types.NewTextPart("Response: " + msg.Parts[0].(*types.TextPart).Text)},
 		), nil
 	}
