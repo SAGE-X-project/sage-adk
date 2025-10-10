@@ -124,9 +124,9 @@ truncated := llm.TruncateMessages(messages, counter, maxTokens)
 
 | Provider   | Function Calling | Notes                      |
 |------------|-----------------|----------------------------|
-| OpenAI     | ✅ Yes          | Native tool support        |
-| Anthropic  | ✅ Yes          | Uses tool_use content type |
-| Gemini     | ✅ Yes          | Uses functionCall in parts |
+| OpenAI     |  Yes          | Native tool support        |
+| Anthropic  |  Yes          | Uses tool_use content type |
+| Gemini     |  Yes          | Uses functionCall in parts |
 
 ## Advanced Features
 

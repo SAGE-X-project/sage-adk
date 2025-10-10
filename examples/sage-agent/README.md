@@ -106,31 +106,31 @@ The SAGE protocol supports multiple blockchain networks:
 ## Architecture
 
 ```
-┌─────────────────┐
-│   User/Client   │
-│  (with DID)     │
-└────────┬────────┘
-         │ SAGE Protocol
-         │ (Signed & Encrypted)
+
+   User/Client   
+  (with DID)     
+
+          SAGE Protocol
+          (Signed & Encrypted)
          ↓
-┌─────────────────────────┐
-│    SAGE Agent           │
-│    (Port 8080)          │
-├─────────────────────────┤
-│  1. Verify Signature    │
-│  2. Resolve DID         │
-│  3. Decrypt Message     │
-│  4. Process with LLM    │
-│  5. Sign Response       │
-│  6. Encrypt Response    │
-└─────────────────────────┘
-         │
+
+    SAGE Agent           
+    (Port 8080)          
+
+  1. Verify Signature    
+  2. Resolve DID         
+  3. Decrypt Message     
+  4. Process with LLM    
+  5. Sign Response       
+  6. Encrypt Response    
+
+         
          ↓
-┌─────────────────────────┐
-│  Blockchain Network     │
-│  - DID Resolution       │
-│  - Public Key Registry  │
-└─────────────────────────┘
+
+  Blockchain Network     
+  - DID Resolution       
+  - Public Key Registry  
+
 ```
 
 ### Key Components

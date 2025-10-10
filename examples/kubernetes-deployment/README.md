@@ -2,7 +2,7 @@
 
 Production-ready Kubernetes deployment configuration for SAGE ADK agents with high availability, auto-scaling, and observability.
 
-## 📁 Files
+##  Files
 
 - `namespace.yaml` - Namespace definition
 - `serviceaccount.yaml` - RBAC configuration
@@ -14,7 +14,7 @@ Production-ready Kubernetes deployment configuration for SAGE ADK agents with hi
 - `hpa.yaml` - Horizontal Pod Autoscaler
 - `Dockerfile` - Container image definition
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Build Docker Image
 
@@ -78,7 +78,7 @@ kubectl logs -n sage-adk -l app=sage-adk-agent -f
 kubectl port-forward -n sage-adk svc/sage-adk-agent 8080:80
 ```
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -119,32 +119,32 @@ HPA configuration in `hpa.yaml`:
 - Target CPU: 70%
 - Target Memory: 80%
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
-┌─────────────┐
-│   Ingress   │
-└──────┬──────┘
-       │
-┌──────▼──────────────┐
-│  Load Balancer      │
-│  (Service)          │
-└──────┬──────────────┘
-       │
-┌──────▼──────────────┐
-│  Agent Pods (3-10)  │
-│  - Liveness Probe   │
-│  - Readiness Probe  │
-│  - Startup Probe    │
-└──────┬──────────────┘
-       │
-┌──────▼──────────────┐
-│  Storage Backend    │
-│  (Redis/PostgreSQL) │
-└─────────────────────┘
+
+   Ingress   
+
+       
+
+  Load Balancer      
+  (Service)          
+
+       
+
+  Agent Pods (3-10)  
+  - Liveness Probe   
+  - Readiness Probe  
+  - Startup Probe    
+
+       
+
+  Storage Backend    
+  (Redis/PostgreSQL) 
+
 ```
 
-## 🔐 Security Features
+##  Security Features
 
 ### 1. Pod Security
 
@@ -209,7 +209,7 @@ kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-sec
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.18.0/controller.yaml
 ```
 
-## 📊 Monitoring
+##  Monitoring
 
 ### Prometheus Integration
 
@@ -243,7 +243,7 @@ spec:
 
 Import dashboard from `../monitoring-setup/grafana-dashboard.json`
 
-## 🏥 Health Checks
+##  Health Checks
 
 Three types of probes configured:
 
@@ -262,7 +262,7 @@ Three types of probes configured:
 - Endpoint: `/health/startup`
 - Failure: Pod restart after 30 attempts
 
-## 🔄 Rolling Updates
+##  Rolling Updates
 
 ```bash
 # Update image
@@ -277,7 +277,7 @@ kubectl rollout status deployment/sage-adk-agent -n sage-adk
 kubectl rollout undo deployment/sage-adk-agent -n sage-adk
 ```
 
-## 📈 Scaling
+##  Scaling
 
 ### Manual Scaling
 
@@ -293,7 +293,7 @@ HPA automatically scales based on:
 - Memory utilization (80%)
 - Custom metrics (requests/sec)
 
-## 🔍 Troubleshooting
+##  Troubleshooting
 
 ### Pod not starting
 
@@ -333,7 +333,7 @@ kubectl get hpa -n sage-adk
 kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/sage-adk/pods
 ```
 
-## 🌐 Multi-Region Deployment
+##  Multi-Region Deployment
 
 For multi-region setup:
 
@@ -342,7 +342,7 @@ For multi-region setup:
 3. Configure cross-region replication for storage
 4. Use external DNS for automatic DNS management
 
-## 📦 Dependencies
+##  Dependencies
 
 ### Required
 
@@ -356,7 +356,7 @@ For multi-region setup:
 - Cert-Manager (for TLS certificates)
 - External Secrets Operator (for secret management)
 
-## 🚨 Production Checklist
+##  Production Checklist
 
 - [ ] Secrets properly configured
 - [ ] Resource limits set
@@ -371,7 +371,7 @@ For multi-region setup:
 - [ ] Auto-scaling tested
 - [ ] Rolling update strategy tested
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - [Kubernetes Best Practices](https://kubernetes.io/docs/concepts/configuration/overview/)
 - [Production Deployment Guide](../../docs/deployment/)

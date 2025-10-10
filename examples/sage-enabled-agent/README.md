@@ -6,34 +6,34 @@ This example demonstrates **low-level SAGE adapter usage** for secure agent-to-a
 
 This example shows how to use the SAGE adapter directly (without the high-level builder API) to:
 
-- ✅ Create SAGE protocol adapters with Ed25519 key pairs
-- ✅ Send signed messages over HTTP
-- ✅ Receive and verify messages with signature validation
-- ✅ Implement nonce-based replay attack protection
-- ✅ Validate message timestamps with clock skew tolerance
-- ✅ Run agents in interactive or distributed mode
+-  Create SAGE protocol adapters with Ed25519 key pairs
+-  Send signed messages over HTTP
+-  Receive and verify messages with signature validation
+-  Implement nonce-based replay attack protection
+-  Validate message timestamps with clock skew tolerance
+-  Run agents in interactive or distributed mode
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      SAGE Protocol Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────┐         HTTP/JSON          ┌──────────┐       │
-│  │  Alice   │ ───────────────────────▶   │   Bob    │       │
-│  │ (Sender) │  Signed + Encrypted Msg    │(Receiver)│       │
-│  └──────────┘                             └──────────┘       │
-│       │                                         │            │
-│       │ 1. Add Security Metadata                │            │
-│       │ 2. Sign with Ed25519                    │            │
-│       │ 3. Send via NetworkClient               │            │
-│       │                                         │            │
-│       │                                    4. Verify Signature│
-│       │                                    5. Check Nonce    │
-│       │                                    6. Validate Time  │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+
+                      SAGE Protocol Layer                     
+
+                                                               
+           HTTP/JSON                 
+    Alice          Bob           
+   (Sender)   Signed + Encrypted Msg    (Receiver)       
+                                      
+                                                            
+        1. Add Security Metadata                            
+        2. Sign with Ed25519                                
+        3. Send via NetworkClient                           
+                                                            
+                                           4. Verify Signature
+                                           5. Check Nonce    
+                                           6. Validate Time  
+                                                               
+
 ```
 
 ## Running Modes
@@ -55,34 +55,34 @@ This will:
 
 **Output:**
 ```
-🚀 SAGE Interactive Demo - Two agents exchanging secure messages
+ SAGE Interactive Demo - Two agents exchanging secure messages
 ======================================================================
 
-📋 Step 1: Generating Ed25519 key pairs for Alice and Bob...
-✅ Alice's public key: a1b2c3d4e5f6g7h8
-✅ Bob's public key: 9i0j1k2l3m4n5o6p
+ Step 1: Generating Ed25519 key pairs for Alice and Bob...
+ Alice's public key: a1b2c3d4e5f6g7h8
+ Bob's public key: 9i0j1k2l3m4n5o6p
 
-📋 Step 2: Creating SAGE adapters...
-✅ Alice's adapter created
-✅ Bob's adapter created
+ Step 2: Creating SAGE adapters...
+ Alice's adapter created
+ Bob's adapter created
 
-📋 Step 3: Starting Bob's HTTP server on :18080...
-✅ Bob's server is running
+ Step 3: Starting Bob's HTTP server on :18080...
+ Bob's server is running
 
-📋 Step 4: Configuring Alice to send messages to Bob...
-✅ Alice configured to send to: http://localhost:18080/sage/message
+ Step 4: Configuring Alice to send messages to Bob...
+ Alice configured to send to: http://localhost:18080/sage/message
 
-📋 Step 5: Alice sending encrypted message to Bob...
-✅ Message sent successfully
+ Step 5: Alice sending encrypted message to Bob...
+ Message sent successfully
 
-📨 Bob received message from did:sage:alice
-✅ Message signature verified successfully
-📝 Message content: Hello Bob! This is a secure SAGE message from Alice.
+ Bob received message from did:sage:alice
+ Message signature verified successfully
+ Message content: Hello Bob! This is a secure SAGE message from Alice.
 
-📋 Step 6: Verifying message delivery...
-✅ Message delivered and verified successfully
+ Step 6: Verifying message delivery...
+ Message delivered and verified successfully
 
-📊 Security Metadata:
+ Security Metadata:
   Protocol Mode: SAGE
   Agent DID: did:sage:alice
   Timestamp: 2025-10-10T05:45:23Z
@@ -91,7 +91,7 @@ This will:
   Signature KeyID: did:sage:alice#key-1
   Signature Length: 64 bytes
 
-🎉 SAGE Interactive Demo completed successfully!
+ SAGE Interactive Demo completed successfully!
 ======================================================================
 ```
 
@@ -105,9 +105,9 @@ go run main.go receiver
 
 Output:
 ```
-🚀 SAGE Receiver (Bob)
+ SAGE Receiver (Bob)
 Listening on :18080
-✅ Server started. Press Ctrl+C to stop.
+ Server started. Press Ctrl+C to stop.
 ```
 
 #### Terminal 2: Run Alice (Sender)
@@ -118,16 +118,16 @@ go run main.go sender
 
 Output:
 ```
-🚀 SAGE Sender (Alice)
-📤 Sending message to: http://localhost:18080/sage/message
-✅ Message sent successfully
+ SAGE Sender (Alice)
+ Sending message to: http://localhost:18080/sage/message
+ Message sent successfully
 ```
 
 #### Bob's Terminal:
 ```
-📨 Received message from did:sage:alice
-✅ Message verified
-📝 Content: Hello from standalone Alice!
+ Received message from did:sage:alice
+ Message verified
+ Content: Hello from standalone Alice!
 ```
 
 ## Environment Variables
@@ -224,7 +224,7 @@ if err := adapter.Verify(ctx, msg); err != nil {
 | Feature | sage-agent | sage-enabled-agent |
 |---------|------------|-------------------|
 | **API Level** | High-level builder API | Low-level adapter API |
-| **LLM Integration** | ✅ Uses OpenAI | ❌ No LLM (pure transport) |
+| **LLM Integration** |  Uses OpenAI |  No LLM (pure transport) |
 | **Use Case** | Production chatbot | Transport protocol demo |
 | **Complexity** | Simple (5 lines) | Detailed (shows internals) |
 | **Server** | Built-in HTTP server | Manual NetworkServer setup |
@@ -234,9 +234,9 @@ if err := adapter.Verify(ctx, msg); err != nil {
 
 ```
 sage-enabled-agent/
-├── main.go              # Main entry point with 3 modes
-├── README.md            # This file
-└── .env.example         # Environment variable template
+ main.go              # Main entry point with 3 modes
+ README.md            # This file
+ .env.example         # Environment variable template
 ```
 
 ## Security Features

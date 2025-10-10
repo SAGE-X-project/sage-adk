@@ -5,12 +5,12 @@ This example demonstrates a multi-agent system where multiple AI agents collabor
 ## Architecture
 
 ```
-┌──────────┐      ┌─────────────┐      ┌──────────────┐
-│  Client  │─────>│ Coordinator │─────>│ Specialist   │
-└──────────┘      │   Agent     │      │   Agents     │
-                  └─────────────┘      └──────────────┘
-                         │                    │
-                         └────────────────────┘
+            
+  Client  > Coordinator > Specialist   
+         Agent              Agents     
+                        
+                                             
+                         
                           Collaboration Flow
 ```
 
@@ -38,11 +38,11 @@ This example demonstrates a multi-agent system where multiple AI agents collabor
 
 ## Features
 
-✅ **Intelligent Routing**: Automatically routes questions to the right specialist
-✅ **Agent Collaboration**: Agents communicate through HTTP/A2A protocol
-✅ **Scalable Architecture**: Easy to add new specialist agents
-✅ **Graceful Shutdown**: All agents shut down cleanly
-✅ **Interactive Demo**: Built-in demonstration mode
+ **Intelligent Routing**: Automatically routes questions to the right specialist
+ **Agent Collaboration**: Agents communicate through HTTP/A2A protocol
+ **Scalable Architecture**: Easy to add new specialist agents
+ **Graceful Shutdown**: All agents shut down cleanly
+ **Interactive Demo**: Built-in demonstration mode
 
 ## Running the Example
 
@@ -142,19 +142,19 @@ func main() {
 ## Logs Example
 
 ```
-🚀 Starting Multi-Agent Chat System...
-✅ All agents started successfully
+ Starting Multi-Agent Chat System...
+ All agents started successfully
 
-📋 Available Agents:
+ Available Agents:
   - Coordinator (port 8090): Routes questions to specialists
   - Math Agent (port 8091): Answers mathematical questions
   - Code Agent (port 8092): Answers programming questions
   - General Agent (port 8093): Handles general knowledge
 
-📨 [Coordinator] Received: What is 123 times 456?
-🔀 [Coordinator] Routing to Math Agent at http://localhost:8091
-🔢 [Math Agent] Processing: What is 123 times 456?
-💬 Response:
+ [Coordinator] Received: What is 123 times 456?
+ [Coordinator] Routing to Math Agent at http://localhost:8091
+ [Math Agent] Processing: What is 123 times 456?
+ Response:
 [Routed to Math Agent]
 Math analysis: I can help with mathematical problems!
 Your question: 'What is 123 times 456?'
@@ -168,7 +168,7 @@ Your question: 'What is 123 times 456?'
 func startHistoryAgent(ctx context.Context) *agent.AgentImpl {
     handler := func(ctx context.Context, msg agent.MessageContext) error {
         question := msg.Text()
-        log.Printf("📚 [History Agent] Processing: %s", question)
+        log.Printf(" [History Agent] Processing: %s", question)
 
         // Your history-specific logic here
         response := "History answer: ..."

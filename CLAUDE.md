@@ -56,20 +56,20 @@ SAGE ADK is a Go framework for building secure, interoperable AI agents that sup
 
 ```
 sage-adk/
-├── core/           # Core abstractions (agent, protocol, message)
-├── adapters/       # External integrations (a2a, sage, llm)
-├── builder/        # Fluent API builder
-├── server/         # HTTP/gRPC server
-├── client/         # Client SDK
-├── storage/        # Storage backends
-├── config/         # Configuration management
-├── security/       # Security features
-├── pkg/            # Public packages (types, errors, utils)
-├── internal/       # Private packages
-├── examples/       # Example projects
-├── test/           # Integration tests
-├── docs/           # Documentation
-└── cmd/            # CLI tools
+ core/           # Core abstractions (agent, protocol, message)
+ adapters/       # External integrations (a2a, sage, llm)
+ builder/        # Fluent API builder
+ server/         # HTTP/gRPC server
+ client/         # Client SDK
+ storage/        # Storage backends
+ config/         # Configuration management
+ security/       # Security features
+ pkg/            # Public packages (types, errors, utils)
+ internal/       # Private packages
+ examples/       # Example projects
+ test/           # Integration tests
+ docs/           # Documentation
+ cmd/            # CLI tools
 ```
 
 ## Key Dependencies

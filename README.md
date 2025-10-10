@@ -125,7 +125,7 @@ curl -X POST http://localhost:8080/a2a/v1/messages \
 
 ## Key Features
 
-### 🏗️ Fluent Builder API
+###  Fluent Builder API
 
 Build agents with an intuitive, chainable API:
 
@@ -192,7 +192,7 @@ response, err := client.SendMessage(ctx, message)
 - Type conversion (A2A ↔ SDK types)
 - Task management integration
 
-### 💾 Storage Backend
+###  Storage Backend
 
 Currently supports in-memory storage with more backends coming:
 
@@ -239,59 +239,59 @@ agent.Stop(context.Background())
 ## Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│       Your Application Logic            │
-│     (Message Handlers, Business)         │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│         Builder API (Fluent)             │
-│   NewAgent().WithLLM().OnMessage()      │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│            Core Agent                    │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐ │
-│  │ Runtime │  │Protocol │  │ Message │ │
-│  │Lifecycle│  │Selector │  │ Handler │ │
-│  └─────────┘  └─────────┘  └─────────┘ │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│            Adapters Layer                │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐ │
-│  │   A2A   │  │   LLM   │  │ Storage │ │
-│  │ Client/ │  │Provider │  │ Backend │ │
-│  │ Server  │  │         │  │         │ │
-│  └─────────┘  └─────────┘  └─────────┘ │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│      External Dependencies               │
-│  sage-a2a-go, OpenAI API, etc.          │
-└─────────────────────────────────────────┘
+
+       Your Application Logic            
+     (Message Handlers, Business)         
+
+                   
+
+         Builder API (Fluent)             
+   NewAgent().WithLLM().OnMessage()      
+
+                   
+
+            Core Agent                    
+       
+   Runtime   Protocol    Message  
+  Lifecycle  Selector    Handler  
+       
+
+                   
+
+            Adapters Layer                
+       
+     A2A        LLM      Storage  
+   Client/   Provider    Backend  
+   Server                         
+       
+
+                   
+
+      External Dependencies               
+  sage-a2a-go, OpenAI API, etc.          
+
 ```
 
 ## Project Structure
 
 ```
 sage-adk/
-├── builder/            # Fluent API builder
-├── core/
-│   ├── agent/         # Agent core and runtime
-│   └── protocol/      # Protocol abstraction layer
-├── adapters/
-│   ├── a2a/          # A2A protocol adapter
-│   ├── llm/          # LLM provider adapters
-│   └── sage/         # SAGE security (Phase 2B)
-├── storage/           # Storage backends
-├── config/            # Configuration management
-├── pkg/
-│   ├── types/        # Common types and messages
-│   └── errors/       # Error handling
-├── examples/          # Working examples
-│   └── simple-agent/ # Basic chatbot example
-└── docs/              # Documentation
+ builder/            # Fluent API builder
+ core/
+    agent/         # Agent core and runtime
+    protocol/      # Protocol abstraction layer
+ adapters/
+    a2a/          # A2A protocol adapter
+    llm/          # LLM provider adapters
+    sage/         # SAGE security (Phase 2B)
+ storage/           # Storage backends
+ config/            # Configuration management
+ pkg/
+    types/        # Common types and messages
+    errors/       # Error handling
+ examples/          # Working examples
+    simple-agent/ # Basic chatbot example
+ docs/              # Documentation
 ```
 
 ## Examples
@@ -424,7 +424,7 @@ All 253 tests passing:
 - [ ] Tool/function calling
 - [ ] Multi-agent orchestration
 
-### Phase 3 📋 Planned
+### Phase 3  Planned
 - [ ] Advanced security features
 - [ ] Monitoring and metrics
 - [ ] Rate limiting

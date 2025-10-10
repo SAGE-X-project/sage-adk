@@ -140,10 +140,10 @@ go run -tags examples ./examples/simple-agent/main.go
 
 | Example | Protocol | Complexity | Use Case |
 |---------|----------|------------|----------|
-| `simple-agent` | A2A | ⭐ Basic | Quick start, learning basics |
-| `sage-agent` | SAGE | ⭐⭐ Intermediate | Production security, blockchain identity |
-| `sage-enabled-agent` | SAGE (Low-Level) | ⭐⭐⭐ Advanced | Understanding SAGE internals, custom transport |
-| `key-generation` | N/A | ⭐ Basic | Key management utility |
+| `simple-agent` | A2A |  Basic | Quick start, learning basics |
+| `sage-agent` | SAGE |  Intermediate | Production security, blockchain identity |
+| `sage-enabled-agent` | SAGE (Low-Level) |  Advanced | Understanding SAGE internals, custom transport |
+| `key-generation` | N/A |  Basic | Key management utility |
 
 ## Protocol Comparison
 

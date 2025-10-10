@@ -330,48 +330,48 @@ func (v *MessageVerifier) VerifyMessage(msg *Message) error {
 
 ```
 Client Agent (A)                          Server Agent (B)
-     │                                         │
-     │  1. Invitation                          │
-     ├────────────────────────────────────────>│
-     │    - DID of A                           │
-     │    - Signed with A's key                │
-     │                                    ┌────▼────┐
-     │                                    │ Verify  │
-     │                                    │   DID   │
-     │                                    └────┬────┘
-     │  2. Response (Ephemeral Key B)          │
-     │<────────────────────────────────────────┤
-     │    - Encrypted with A's public key      │
-     │                                         │
-┌────▼────┐                                   │
-│ Decrypt │                                   │
-│ Key B   │                                   │
-└────┬────┘                                   │
-     │  3. Request (Ephemeral Key A)          │
-     ├────────────────────────────────────────>│
-     │    - Encrypted with B's public key      │
-     │                                    ┌────▼────┐
-     │                                    │ Decrypt │
-     │                                    │  Key A  │
-     │                                    └────┬────┘
-     │                                    ┌────▼────┐
-     │                                    │  HKDF   │
-     │                                    │ Derive  │
-     │                                    │ Session │
-     │                                    └────┬────┘
-     │  4. Complete                            │
-     │<────────────────────────────────────────┤
-     │    - Session established                │
-┌────▼────┐                              ┌────▼────┐
-│  HKDF   │                              │ Session │
-│ Derive  │                              │  Ready  │
-│ Session │                              └─────────┘
-└────┬────┘
-     │
-┌────▼────┐
-│ Session │
-│  Ready  │
-└─────────┘
+                                              
+       1. Invitation                          
+     >
+         - DID of A                           
+         - Signed with A's key                
+                                         
+                                          Verify  
+                                            DID   
+                                         
+       2. Response (Ephemeral Key B)          
+     <
+         - Encrypted with A's public key      
+                                              
+                                   
+ Decrypt                                    
+ Key B                                      
+                                   
+       3. Request (Ephemeral Key A)          
+     >
+         - Encrypted with B's public key      
+                                         
+                                          Decrypt 
+                                           Key A  
+                                         
+                                         
+                                           HKDF   
+                                          Derive  
+                                          Session 
+                                         
+       4. Complete                            
+     <
+         - Session established                
+                              
+  HKDF                                  Session 
+ Derive                                  Ready  
+ Session                               
+
+     
+
+ Session 
+  Ready  
+
 ```
 
 **Session Keys**:

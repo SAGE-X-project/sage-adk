@@ -8,7 +8,7 @@ SAGE ADK v1.2.0 is a major feature release that adds enterprise-grade capabiliti
 
 ## What's New
 
-### 🚀 Major Features
+###  Major Features
 
 #### 1. gRPC Protocol Support
 - **Full gRPC implementation** with Protocol Buffers (proto3)
@@ -211,7 +211,7 @@ manager.RegisterTenant(TenantConfig{
 - `examples/multi-tenant/main.go` - Multi-tenant example
 - `examples/multi-tenant/README.md` - Documentation
 
-### 📊 Performance Improvements
+###  Performance Improvements
 
 #### Cache Performance
 - **Cache hit latency**: ~100ns (in-memory lookup)
@@ -232,7 +232,7 @@ manager.RegisterTenant(TenantConfig{
 - **CPU usage**: 30% lower than HTTP/REST
 - **Memory**: Comparable to HTTP/REST
 
-### 🎯 Production Examples
+###  Production Examples
 
 #### 1. Rate Limiting Example
 Complete example demonstrating all rate limiting strategies:
@@ -288,7 +288,7 @@ docker-compose up -d
 # Access Jaeger UI at http://localhost:16686
 ```
 
-### 🔧 API Changes
+###  API Changes
 
 #### New Packages
 - `ratelimit` - Rate limiting algorithms and middleware
@@ -372,7 +372,7 @@ stream.Send(message)
 response, err := stream.Recv()
 ```
 
-### 📝 Documentation
+###  Documentation
 
 #### New Documentation
 - `examples/rate-limiting/README.md` - Rate limiting guide
@@ -384,7 +384,7 @@ response, err := stream.Recv()
 - API reference updates
 - Code examples and benchmarks
 
-### 🧪 Testing
+###  Testing
 
 #### Test Coverage
 - **ratelimit package**: 95% coverage
@@ -405,20 +405,20 @@ BenchmarkCache_Get                           10,000,000 ops/sec
 BenchmarkCache_Set                            5,000,000 ops/sec
 ```
 
-### 🐛 Bug Fixes
+###  Bug Fixes
 
 - Fixed memory leak in middleware cleanup
 - Improved error handling in gRPC streaming
 - Better context cancellation in rate limiters
 - Fixed race conditions in concurrent cache access
 
-### ⚠️ Breaking Changes
+###  Breaking Changes
 
 **None** - This release maintains full backward compatibility with v1.1.0.
 
 All new features are additive and can be adopted incrementally.
 
-### 🔄 Migration Guide
+###  Migration Guide
 
 No migration required. All new features are opt-in:
 
@@ -442,7 +442,7 @@ shutdown, _ := tracing.InitTracing(tracingConfig)
 defer shutdown(context.Background())
 ```
 
-### 📦 Dependencies
+###  Dependencies
 
 #### New Dependencies
 - `go.opentelemetry.io/otel` - OpenTelemetry SDK
@@ -454,7 +454,7 @@ defer shutdown(context.Background())
 #### Updated Dependencies
 - All existing dependencies updated to latest stable versions
 
-### 🚀 Deployment
+###  Deployment
 
 #### Docker
 ```dockerfile
@@ -489,7 +489,7 @@ spec:
           value: "redis:6379"
 ```
 
-### 📊 Statistics
+###  Statistics
 
 #### Code Statistics
 - **Total files added**: 18
@@ -506,7 +506,7 @@ spec:
 - **Multi-Tenant Example**: 800 LOC
 - **Tests & Documentation**: 600 LOC
 
-### 🎯 Use Cases
+###  Use Cases
 
 #### 1. High-Throughput API Gateway
 ```go
@@ -532,7 +532,7 @@ tracing.InitTracing(tracingConfig)
 limiter := ratelimit.NewDistributed(distributedConfig)
 ```
 
-### 📈 Performance Comparison
+###  Performance Comparison
 
 #### HTTP vs gRPC
 | Metric | HTTP/REST | gRPC | Improvement |
@@ -549,7 +549,7 @@ limiter := ratelimit.NewDistributed(distributedConfig)
 | API Cost | $1.00 | $0.30 | 70% reduction |
 | Throughput | 10 req/s | 100K req/s | 10,000x |
 
-### 🔮 Future Plans
+###  Future Plans
 
 #### v1.3.0 (Planned)
 - Message queue integration (RabbitMQ, Kafka)
@@ -565,7 +565,7 @@ limiter := ratelimit.NewDistributed(distributedConfig)
 - Distributed execution
 - Auto-scaling capabilities
 
-### 🤝 Contributing
+###  Contributing
 
 We welcome contributions! Areas where we'd love help:
 - Additional cache backends (Redis, Memcached)
@@ -574,18 +574,18 @@ We welcome contributions! Areas where we'd love help:
 - Documentation improvements
 - Example projects
 
-### 📞 Support
+###  Support
 
 - **Documentation**: https://docs.sage-adk.dev
 - **Issues**: https://github.com/sage-x-project/agent-develope-kit/issues
 - **Discussions**: https://github.com/sage-x-project/agent-develope-kit/discussions
 - **Discord**: https://discord.gg/sage-adk
 
-### 🙏 Acknowledgments
+###  Acknowledgments
 
 Special thanks to all contributors who made this release possible!
 
-### 📄 License
+###  License
 
 SAGE ADK is licensed under the GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later).
 

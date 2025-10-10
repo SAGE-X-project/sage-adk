@@ -7,57 +7,57 @@ SAGE ADK is designed as a layered architecture that provides flexibility, securi
 ## High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Application Layer                            │
-│              (User-Defined Agent Business Logic)                 │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Message    │  │     LLM      │  │   Custom     │          │
-│  │   Handlers   │  │  Processing  │  │   Skills     │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-┌────────────────────────────▼────────────────────────────────────┐
-│                        ADK Core Layer                            │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │    Agent     │  │   Message    │  │   Protocol   │          │
-│  │   Builder    │  │   Router     │  │   Selector   │          │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
-│         │                  │                  │                   │
-│  ┌──────▼───────┐  ┌──────▼───────┐  ┌──────▼───────┐          │
-│  │  Lifecycle   │  │  Middleware  │  │   Security   │          │
-│  │   Manager    │  │    Chain     │  │   Manager    │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-┌────────────────────────────▼────────────────────────────────────┐
-│                       Adapter Layer                              │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │     A2A      │  │     SAGE     │  │     LLM      │          │
-│  │   Adapter    │  │   Adapter    │  │   Adapter    │          │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
-│         │                  │                  │                   │
-│  ┌──────▼───────┐  ┌──────▼───────┐  ┌──────▼───────┐          │
-│  │   Storage    │  │     DID      │  │   Provider   │          │
-│  │   Adapter    │  │   Resolver   │  │   Manager    │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-┌────────────────────────────▼────────────────────────────────────┐
-│                  External Dependencies Layer                     │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ sage-a2a-go  │  │     sage     │  │   LLM APIs   │          │
-│  │   Library    │  │   Library    │  │              │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐                             │
-│  │    Redis     │  │  Blockchain  │                             │
-│  │   Storage    │  │     RPC      │                             │
-│  └──────────────┘  └──────────────┘                             │
-└─────────────────────────────────────────────────────────────────┘
+
+                     Application Layer                            
+              (User-Defined Agent Business Logic)                 
+                                                                   
+                
+     Message           LLM           Custom               
+     Handlers       Processing       Skills               
+                
+
+                             
+
+                        ADK Core Layer                            
+                                                                   
+                
+      Agent          Message         Protocol             
+     Builder         Router          Selector             
+                
+                                                                
+                
+    Lifecycle       Middleware       Security             
+     Manager          Chain          Manager              
+                
+
+                             
+
+                       Adapter Layer                              
+                                                                   
+                
+       A2A             SAGE            LLM                
+     Adapter         Adapter         Adapter              
+                
+                                                                
+                
+     Storage           DID           Provider             
+     Adapter         Resolver        Manager              
+                
+
+                             
+
+                  External Dependencies Layer                     
+                                                                   
+                
+   sage-a2a-go         sage          LLM APIs             
+     Library         Library                              
+                
+                                                                   
+                                 
+      Redis         Blockchain                               
+     Storage           RPC                                   
+                                 
+
 ```
 
 ## Core Components
@@ -75,13 +75,13 @@ SAGE ADK is designed as a layered architecture that provides flexibility, securi
 **Code Structure**:
 ```
 builder/
-├── builder.go          # Main builder implementation
-├── options.go          # Configuration options
-├── validator.go        # Pre-build validation
-└── templates/          # Pre-configured templates
-    ├── simple.go       # Simple agent template
-    ├── conversational.go
-    └── orchestrator.go
+ builder.go          # Main builder implementation
+ options.go          # Configuration options
+ validator.go        # Pre-build validation
+ templates/          # Pre-configured templates
+     simple.go       # Simple agent template
+     conversational.go
+     orchestrator.go
 ```
 
 **Example Usage**:
@@ -150,10 +150,10 @@ type Protocol interface {
 **Code Structure**:
 ```
 core/message/
-├── router.go           # Main router
-├── strategy.go         # Routing strategies
-├── matcher.go          # Content matching
-└── middleware.go       # Message middleware
+ router.go           # Main router
+ strategy.go         # Routing strategies
+ matcher.go          # Content matching
+ middleware.go       # Message middleware
 ```
 
 **Example**:
@@ -182,11 +182,11 @@ router := message.NewRouter().
 **Code Structure**:
 ```
 security/
-├── protocol_switch.go  # A2A ↔ SAGE switching
-├── signature.go        # RFC 9421 signing/verification
-├── did_resolver.go     # Blockchain DID resolution
-├── session.go          # Session key management
-└── policy.go           # Security policies
+ protocol_switch.go  # A2A ↔ SAGE switching
+ signature.go        # RFC 9421 signing/verification
+ did_resolver.go     # Blockchain DID resolution
+ session.go          # Session key management
+ policy.go           # Security policies
 ```
 
 ### 5. Storage Layer
@@ -249,65 +249,65 @@ type GenerateRequest struct {
 
 ```
 Incoming HTTP Request
-        │
-        ▼
-┌───────────────┐
-│ HTTP Handler  │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Protocol      │◄── Detect A2A vs SAGE from headers
-│ Detection     │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Security      │◄── Verify signature if SAGE mode
-│ Validation    │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Message       │◄── Parse A2A message format
-│ Parsing       │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Middleware    │◄── Auth, logging, metrics, rate limiting
-│ Chain         │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Message       │◄── Route to appropriate handler
-│ Router        │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ User Handler  │◄── Your business logic + LLM processing
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Response      │◄── Build response message
-│ Builder       │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Signature     │◄── Sign response if SAGE mode
-│ Generation    │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Storage       │◄── Save task, message history
-└───────┬───────┘
-        │
-        ▼
+        
+        
+
+ HTTP Handler  
+
+        
+        
+
+ Protocol       Detect A2A vs SAGE from headers
+ Detection     
+
+        
+        
+
+ Security       Verify signature if SAGE mode
+ Validation    
+
+        
+        
+
+ Message        Parse A2A message format
+ Parsing       
+
+        
+        
+
+ Middleware     Auth, logging, metrics, rate limiting
+ Chain         
+
+        
+        
+
+ Message        Route to appropriate handler
+ Router        
+
+        
+        
+
+ User Handler   Your business logic + LLM processing
+
+        
+        
+
+ Response       Build response message
+ Builder       
+
+        
+        
+
+ Signature      Sign response if SAGE mode
+ Generation    
+
+        
+        
+
+ Storage        Save task, message history
+
+        
+        
    HTTP Response
 ```
 
@@ -361,71 +361,71 @@ func (s *ProtocolSelector) SelectProtocol(msg *Message) (Protocol, error) {
 ### SAGE Signature Verification Flow
 
 ```
-┌─────────────────┐
-│ Extract DID     │
-│ from message    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Resolve Public  │◄── Query blockchain registry
-│ Key from DID    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Verify RFC 9421 │◄── Use sage library
-│ Signature       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Check Nonce     │◄── Replay protection
-│ Cache           │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Accept/Reject   │
-└─────────────────┘
+
+ Extract DID     
+ from message    
+
+         
+         
+
+ Resolve Public   Query blockchain registry
+ Key from DID    
+
+         
+         
+
+ Verify RFC 9421  Use sage library
+ Signature       
+
+         
+         
+
+ Check Nonce      Replay protection
+ Cache           
+
+         
+         
+
+ Accept/Reject   
+
 ```
 
 ## Agent Lifecycle
 
 ```
-┌──────────┐
-│  Create  │  agent := adk.NewAgent("name")
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│Configure │  .WithLLM(...).WithStorage(...)
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│ Validate │  Check required fields, dependencies
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│  Build   │  .Build() → Returns Agent instance
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│  Start   │  agent.Start(":8080")
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│ Running  │  Handle messages, maintain sessions
-└────┬─────┘
-     │
-     ▼
-┌──────────┐
-│Shutdown  │  Graceful shutdown, cleanup
-└──────────┘
+
+  Create    agent := adk.NewAgent("name")
+
+     
+     
+
+Configure   .WithLLM(...).WithStorage(...)
+
+     
+     
+
+ Validate   Check required fields, dependencies
+
+     
+     
+
+  Build     .Build() → Returns Agent instance
+
+     
+     
+
+  Start     agent.Start(":8080")
+
+     
+     
+
+ Running    Handle messages, maintain sessions
+
+     
+     
+
+Shutdown    Graceful shutdown, cleanup
+
 ```
 
 ## Concurrency Model

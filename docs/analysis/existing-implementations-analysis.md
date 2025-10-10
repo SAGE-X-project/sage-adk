@@ -1726,14 +1726,14 @@ Help developers fix problems:
 Provide examples for every use case:
 ```
 examples/
-├── 01-simple-agent/          # Echo agent (5 lines)
-├── 02-llm-agent/             # OpenAI agent (10 lines)
-├── 03-sage-agent/            # SAGE-secured agent
-├── 04-streaming-agent/       # Streaming responses
-├── 05-multi-agent/           # Orchestration
-├── 06-tool-agent/            # Tool calling
-├── 07-production-agent/      # Full production setup
-└── 08-migration-guide/       # From sage-a2a-go to ADK
+ 01-simple-agent/          # Echo agent (5 lines)
+ 02-llm-agent/             # OpenAI agent (10 lines)
+ 03-sage-agent/            # SAGE-secured agent
+ 04-streaming-agent/       # Streaming responses
+ 05-multi-agent/           # Orchestration
+ 06-tool-agent/            # Tool calling
+ 07-production-agent/      # Full production setup
+ 08-migration-guide/       # From sage-a2a-go to ADK
 ```
 
 ---

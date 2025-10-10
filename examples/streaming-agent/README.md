@@ -66,22 +66,22 @@ go run -tags examples client.go "Tell me a story about AI"
 
 You'll see in the server logs:
 ```
-📨 Received message: Tell me a story about AI
-🔄 Streaming response...
-💬 First chunk received: "Once"
-✅ Streaming complete - Total chunks: 147, Total length: 523 characters
+ Received message: Tell me a story about AI
+ Streaming response...
+ First chunk received: "Once"
+ Streaming complete - Total chunks: 147, Total length: 523 characters
 ```
 
 ### Streaming Output Example
 
 ```
-🔄 Streaming response...
-💬 First chunk received: "Once"
-💬 Chunk 2: " upon"
-💬 Chunk 3: " a"
-💬 Chunk 4: " time"
+ Streaming response...
+ First chunk received: "Once"
+ Chunk 2: " upon"
+ Chunk 3: " a"
+ Chunk 4: " time"
 ...
-✅ Streaming complete - Total chunks: 147
+ Streaming complete - Total chunks: 147
 ```
 
 ## How Streaming Works
@@ -121,31 +121,31 @@ err := provider.Stream(ctx, request, func(chunk string) error {
 ## Architecture
 
 ```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │ HTTP POST
+
+   Client    
+
+        HTTP POST
        ↓
-┌─────────────────┐
-│  Streaming      │
-│  Agent          │
-├─────────────────┤
-│  OnMessage()    │
-│     ↓           │
-│  provider.      │
-│  Stream()       │
-│     ↓           │
-│  Collect        │
-│  chunks         │
-└────┬────────────┘
-     │ Stream chunks
+
+  Streaming      
+  Agent          
+
+  OnMessage()    
+     ↓           
+  provider.      
+  Stream()       
+     ↓           
+  Collect        
+  chunks         
+
+      Stream chunks
      ↓
-┌─────────────────┐
-│  LLM Provider   │
-│  (OpenAI/       │
-│   Anthropic/    │
-│   Gemini)       │
-└─────────────────┘
+
+  LLM Provider   
+  (OpenAI/       
+   Anthropic/    
+   Gemini)       
+
 ```
 
 ## Streaming Benefits
@@ -277,7 +277,7 @@ func streamWithTimeout(provider llm.Provider) error {
 
 | Feature | OpenAI | Anthropic | Gemini |
 |---------|--------|-----------|--------|
-| Streaming | ✅ SSE | ✅ SSE | ✅ SSE |
+| Streaming |  SSE |  SSE |  SSE |
 | First Chunk Latency | ~300ms | ~400ms | ~200ms |
 | Chunk Size | 1-5 tokens | 1-3 tokens | 1-5 tokens |
 | Max Tokens/Chunk | ~5 | ~3 | ~5 |
@@ -347,14 +347,14 @@ provider.Stream(ctx, request, func(chunk string) error {
 ### "Memory usage grows during streaming"
 
 ```go
-// ❌ Bad - grows indefinitely
+//  Bad - grows indefinitely
 var allChunks []string
 provider.Stream(ctx, req, func(chunk string) error {
     allChunks = append(allChunks, chunk)
     return nil
 })
 
-// ✅ Good - constant memory
+//  Good - constant memory
 var buffer strings.Builder
 provider.Stream(ctx, req, func(chunk string) error {
     buffer.WriteString(chunk)
@@ -440,11 +440,11 @@ Model: gpt-3.5-turbo
 Listening on http://localhost:8080
 Responses will be streamed in real-time!
 
-📨 Received message: Tell me a story about AI
-🔄 Streaming response...
-💬 First chunk received: "Once"
-✅ Streaming complete - Total chunks: 147, Total length: 523 characters
-💬 Full response: Once upon a time, in a world not too different from ours...
+ Received message: Tell me a story about AI
+ Streaming response...
+ First chunk received: "Once"
+ Streaming complete - Total chunks: 147, Total length: 523 characters
+ Full response: Once upon a time, in a world not too different from ours...
 ```
 
 ## Next Steps

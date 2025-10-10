@@ -2,7 +2,7 @@
 
 Welcome to the **SAGE Agent Development Kit (ADK)** documentation. This comprehensive guide will help you build secure, interoperable AI agents using the A2A protocol with optional SAGE security enhancements.
 
-## 📚 Documentation Structure
+##  Documentation Structure
 
 ### Getting Started
 - [Overview](overview.md) - Introduction to SAGE ADK
@@ -93,7 +93,7 @@ func main() {
 }
 ```
 
-## 📖 Core Concepts
+##  Core Concepts
 
 ### Agent
 An autonomous entity that can:
@@ -115,7 +115,7 @@ When using SAGE mode:
 - **End-to-End Encryption**: HPKE-based secure channels
 - **Replay Protection**: Nonce-based attack prevention
 
-## 🛠️ Development Workflow
+##  Development Workflow
 
 1. **Initialize Project**
    ```bash
@@ -155,7 +155,7 @@ When using SAGE mode:
 - [SAGE Security Framework](https://github.com/sage-x-project/sage)
 - [sage-a2a-go Implementation](https://github.com/sage-x-project/sage-a2a-go)
 
-## 📞 Support
+##  Support
 
 - **Issues**: [GitHub Issues](https://github.com/sage-x-project/sage-adk/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/sage-x-project/sage-adk/discussions)

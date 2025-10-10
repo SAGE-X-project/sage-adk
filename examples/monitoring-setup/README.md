@@ -2,14 +2,14 @@
 
 Complete monitoring stack for SAGE ADK agents with Prometheus, Grafana, and Alertmanager.
 
-## 📊 Components
+##  Components
 
 - **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboards
 - **Alertmanager**: Alert routing and notification
 - **Node Exporter**: System metrics
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Start the Monitoring Stack
 
@@ -39,7 +39,7 @@ docker-compose logs -f
 3. Navigate to "SAGE ADK" folder
 4. Open "SAGE ADK Agent Overview" dashboard
 
-## 📈 Available Dashboards
+##  Available Dashboards
 
 ### 1. Agent Overview Dashboard
 
@@ -75,7 +75,7 @@ Shows:
 - Disk I/O
 - Network traffic
 
-## 🔔 Alerts
+##  Alerts
 
 ### Configured Alerts
 
@@ -105,7 +105,7 @@ curl http://localhost:9093/api/v2/alerts
 open http://localhost:9093
 ```
 
-## 📊 Metrics Reference
+##  Metrics Reference
 
 ### Request Metrics
 
@@ -172,7 +172,7 @@ go_goroutines
 rate(go_gc_duration_seconds_count[5m])
 ```
 
-## 🔍 Useful Queries
+##  Useful Queries
 
 ### Performance Analysis
 
@@ -218,7 +218,7 @@ predict_linear(sage_adk_requests_total[1h], 3600)
 (go_memstats_alloc_bytes / go_memstats_sys_bytes) * 100
 ```
 
-## 📧 Alert Notifications
+##  Alert Notifications
 
 ### Email Setup
 
@@ -256,7 +256,7 @@ receivers:
         description: '{{ .GroupLabels.alertname }}'
 ```
 
-## 🛠️ Advanced Configuration
+##  Advanced Configuration
 
 ### Custom Metrics
 
@@ -320,7 +320,7 @@ For production, consider:
 - **Cortex**: Multi-tenant Prometheus
 - **VictoriaMetrics**: High-performance alternative
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Metrics Not Appearing
 
@@ -359,7 +359,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 docker-compose restart grafana
 ```
 
-## 📊 Grafana Tips
+##  Grafana Tips
 
 ### Creating Custom Dashboards
 
@@ -384,7 +384,7 @@ Create dashboard variables for:
 - `$interval`: Time range
 - `$environment`: Environment (prod/staging/dev)
 
-## 🔐 Security
+##  Security
 
 ### Secure Grafana
 
@@ -406,7 +406,7 @@ basic_auth_users:
   admin: $2y$10$hashed_password_here
 ```
 
-## 📚 Learn More
+##  Learn More
 
 - [Prometheus Documentation](https://prometheus.io/docs/)
 - [Grafana Documentation](https://grafana.com/docs/)

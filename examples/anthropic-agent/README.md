@@ -189,7 +189,7 @@ request := &llm.CompletionRequest{
 The agent automatically logs token usage for each request:
 
 ```
-📊 Usage - Prompt: 45 tokens, Completion: 128 tokens, Total: 173 tokens
+ Usage - Prompt: 45 tokens, Completion: 128 tokens, Total: 173 tokens
 ```
 
 **Token Costs** (approximate, as of 2024):
@@ -259,12 +259,12 @@ The agent handles various error scenarios:
 export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Never hardcode in code
-# ❌ Bad
+#  Bad
 provider := llm.Anthropic(&llm.AnthropicConfig{
     APIKey: "sk-ant-hardcoded-key",
 })
 
-# ✅ Good
+#  Good
 provider := llm.Anthropic()  // Uses ANTHROPIC_API_KEY env var
 ```
 
@@ -288,14 +288,14 @@ export ANTHROPIC_MODEL="claude-3-haiku-20240307"
 Keep conversations focused:
 
 ```go
-// ❌ Sending too much context
+//  Sending too much context
 messages := []llm.Message{
     {Role: llm.RoleSystem, Content: veryLongSystemPrompt},
     // ... 50 previous messages ...
     {Role: llm.RoleUser, Content: currentQuestion},
 }
 
-// ✅ Summarize or truncate context
+//  Summarize or truncate context
 messages := []llm.Message{
     {Role: llm.RoleSystem, Content: "You are a helpful assistant."},
     {Role: llm.RoleAssistant, Content: summarizeConversation(prevMessages)},
@@ -363,10 +363,10 @@ export ANTHROPIC_API_KEY="sk-ant-your-key"
 | Latest Model | Claude 3 Opus | GPT-4 Turbo |
 | Context Window | 200K tokens | 128K tokens |
 | System Prompt | Native support | Native support |
-| Streaming | ✅ Yes | ✅ Yes |
-| Function Calling | ✅ Yes | ✅ Yes |
-| JSON Mode | ✅ Yes | ✅ Yes |
-| Vision | ✅ Yes | ✅ Yes |
+| Streaming |  Yes |  Yes |
+| Function Calling |  Yes |  Yes |
+| JSON Mode |  Yes |  Yes |
+| Vision |  Yes |  Yes |
 
 ### Migration from OpenAI
 

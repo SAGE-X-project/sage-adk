@@ -30,28 +30,28 @@ This example demonstrates how to build a multi-tenant agent system with complete
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│              HTTP Server (:8080)                     │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              Tenant Manager                          │
-│  - Tenant routing                                    │
-│  - Authentication                                    │
-│  - Statistics aggregation                            │
-└─────────────────────────────────────────────────────┘
-                          │
-        ┌─────────────────┼─────────────────┐
-        ▼                 ▼                 ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│   Tenant 1   │  │   Tenant 2   │  │   Tenant 3   │
-├──────────────┤  ├──────────────┤  ├──────────────┤
-│ Agent        │  │ Agent        │  │ Agent        │
-│ Rate Limiter │  │ Rate Limiter │  │ Rate Limiter │
-│ Storage      │  │ Storage      │  │ Storage      │
-│ Cache        │  │ Cache        │  │ Cache        │
-└──────────────┘  └──────────────┘  └──────────────┘
+
+              HTTP Server (:8080)                     
+
+                          
+                          
+
+              Tenant Manager                          
+  - Tenant routing                                    
+  - Authentication                                    
+  - Statistics aggregation                            
+
+                          
+        
+                                          
+    
+   Tenant 1        Tenant 2        Tenant 3   
+    
+ Agent           Agent           Agent        
+ Rate Limiter    Rate Limiter    Rate Limiter 
+ Storage         Storage         Storage      
+ Cache           Cache           Cache        
+    
 ```
 
 ## Usage

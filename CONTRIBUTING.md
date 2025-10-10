@@ -161,15 +161,15 @@ Understand the project layout before contributing:
 
 ```
 sage-adk/
-├── core/           # Core functionality
-├── adapters/       # External integrations
-├── builder/        # Fluent API builder
-├── server/         # HTTP/gRPC server
-├── client/         # Client SDK
-├── storage/        # Storage backends
-├── config/         # Configuration management
-├── examples/       # Example projects
-└── docs/           # Documentation
+ core/           # Core functionality
+ adapters/       # External integrations
+ builder/        # Fluent API builder
+ server/         # HTTP/gRPC server
+ client/         # Client SDK
+ storage/        # Storage backends
+ config/         # Configuration management
+ examples/       # Example projects
+ docs/           # Documentation
 ```
 
 ## Testing Guidelines

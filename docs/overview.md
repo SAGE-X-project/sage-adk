@@ -28,21 +28,21 @@ Modern AI systems require multiple specialized agents working together. However,
 SAGE ADK solves these challenges by providing:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    SAGE ADK Layer                        │
-│  (Unified API, Builder Pattern, Auto-Configuration)     │
-└──────────────┬────────────────────┬─────────────────────┘
-               │                    │
-       ┌───────▼──────┐    ┌───────▼────────┐
-       │ A2A Protocol │    │ SAGE Protocol  │
-       │  (Standard)  │    │   (Secure)     │
-       └──────────────┘    └────────────────┘
-               │                    │
-               └────────┬───────────┘
-                        │
-         ┌──────────────▼───────────────┐
-         │  sage-a2a-go + sage (libs)   │
-         └──────────────────────────────┘
+
+                    SAGE ADK Layer                        
+  (Unified API, Builder Pattern, Auto-Configuration)     
+
+                                   
+           
+        A2A Protocol      SAGE Protocol  
+         (Standard)         (Secure)     
+           
+                                   
+               
+                        
+         
+           sage-a2a-go + sage (libs)   
+         
 ```
 
 ## Core Components
@@ -154,34 +154,34 @@ WithSAGE(sage.Options{
 ## Architecture Layers
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  Application Layer                       │
-│              (Your Agent Business Logic)                 │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│                   ADK Core Layer                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │  Agent   │  │ Message  │  │  Router  │              │
-│  │ Builder  │  │Processor │  │          │              │
-│  └──────────┘  └──────────┘  └──────────┘              │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│                  Adapter Layer                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │   A2A    │  │   SAGE   │  │   LLM    │              │
-│  │ Adapter  │  │ Adapter  │  │ Adapter  │              │
-│  └──────────┘  └──────────┘  └──────────┘              │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│              External Dependencies Layer                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │sage-a2a- │  │   sage   │  │LLM APIs  │              │
-│  │   go     │  │  library │  │          │              │
-│  └──────────┘  └──────────┘  └──────────┘              │
-└─────────────────────────────────────────────────────────┘
+
+                  Application Layer                       
+              (Your Agent Business Logic)                 
+
+                       
+
+                   ADK Core Layer                         
+                    
+    Agent      Message      Router                
+   Builder    Processor                           
+                    
+
+                       
+
+                  Adapter Layer                           
+                    
+     A2A         SAGE        LLM                  
+   Adapter     Adapter     Adapter                
+                    
+
+                       
+
+              External Dependencies Layer                 
+                    
+  sage-a2a-      sage     LLM APIs                
+     go         library                           
+                    
+
 ```
 
 ## Message Flow
@@ -190,50 +190,50 @@ WithSAGE(sage.Options{
 
 ```
 Client Agent                    Server Agent
-     │                               │
-     │   POST /message/send          │
-     ├──────────────────────────────>│
-     │   (A2A Message)                │
-     │                               │
-     │                          ┌────▼────┐
-     │                          │ Process │
-     │                          │  with   │
-     │                          │  LLM    │
-     │                          └────┬────┘
-     │                               │
-     │   <── Response Message ───────┤
-     │                               │
+                                    
+        POST /message/send          
+     >
+        (A2A Message)                
+                                    
+                               
+                                Process 
+                                 with   
+                                 LLM    
+                               
+                                    
+        < Response Message 
+                                    
 ```
 
 ### SAGE-Enhanced Flow
 
 ```
 Client Agent                    Server Agent
-     │                               │
-     │   1. Handshake Request        │
-     ├──────────────────────────────>│
-     │   (DID + Ephemeral Key)       │
-     │                               │
-     │   <── Handshake Response ─────┤
-     │   (Session Key Established)   │
-     │                               │
-     │   2. Signed Message           │
-     ├──────────────────────────────>│
-     │   (RFC 9421 Signature)        │
-     │                          ┌────▼────────┐
-     │                          │ Verify      │
-     │                          │ Signature   │
-     │                          │ (Blockchain)│
-     │                          └────┬────────┘
-     │                          ┌────▼────┐
-     │                          │ Process │
-     │                          │  with   │
-     │                          │  LLM    │
-     │                          └────┬────┘
-     │                               │
-     │   <── Signed Response ────────┤
-     │   (RFC 9421 Signature)        │
-     │                               │
+                                    
+        1. Handshake Request        
+     >
+        (DID + Ephemeral Key)       
+                                    
+        < Handshake Response 
+        (Session Key Established)   
+                                    
+        2. Signed Message           
+     >
+        (RFC 9421 Signature)        
+                               
+                                Verify      
+                                Signature   
+                                (Blockchain)
+                               
+                               
+                                Process 
+                                 with   
+                                 LLM    
+                               
+                                    
+        < Signed Response 
+        (RFC 9421 Signature)        
+                                    
 ```
 
 ## Protocol Switching Logic

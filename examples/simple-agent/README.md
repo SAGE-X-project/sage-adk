@@ -124,21 +124,21 @@ curl -X POST http://localhost:8080/a2a/v1/messages \
 This example demonstrates the core concepts of SAGE ADK:
 
 ```
-┌─────────────────┐
-│   User/Client   │
-└────────┬────────┘
-         │ A2A Protocol
+
+   User/Client   
+
+          A2A Protocol
          ↓
-┌─────────────────┐
-│  Simple Agent   │
-│  (Port 8080)    │
-├─────────────────┤
-│  Message        │
-│  Handler        │
-│     ↓           │
-│  OpenAI LLM     │
-│  Integration    │
-└─────────────────┘
+
+  Simple Agent   
+  (Port 8080)    
+
+  Message        
+  Handler        
+     ↓           
+  OpenAI LLM     
+  Integration    
+
 ```
 
 ### Key Components

@@ -205,7 +205,7 @@ request := &llm.CompletionRequest{
 The agent automatically logs token usage:
 
 ```
-📊 Usage - Prompt: 52 tokens, Completion: 143 tokens, Total: 195 tokens
+ Usage - Prompt: 52 tokens, Completion: 143 tokens, Total: 195 tokens
 ```
 
 **Pricing** (as of 2024):
@@ -317,12 +317,12 @@ These are automatically applied by the API.
 export GEMINI_API_KEY="AIza..."
 
 # Never hardcode in code
-# ❌ Bad
+#  Bad
 provider := llm.Gemini(&llm.GeminiConfig{
     APIKey: "AIza-hardcoded-key",
 })
 
-# ✅ Good
+#  Good
 provider := llm.Gemini()  // Uses environment variable
 ```
 
@@ -425,10 +425,10 @@ export GOOGLE_API_KEY="AIza-your-key"
 | Feature | Gemini | GPT-4 | Claude 3 |
 |---------|--------|-------|----------|
 | Context Window | 1M+ tokens | 128K | 200K |
-| Free Tier | ✅ 60 req/min | ❌ No | ❌ No |
-| Vision | ✅ Yes | ✅ Yes | ✅ Yes |
-| Streaming | ✅ Yes | ✅ Yes | ✅ Yes |
-| Native Safety | ✅ Built-in | ⚠️ Moderation API | ⚠️ Limited |
+| Free Tier |  60 req/min |  No |  No |
+| Vision |  Yes |  Yes |  Yes |
+| Streaming |  Yes |  Yes |  Yes |
+| Native Safety |  Built-in |  Moderation API |  Limited |
 | Pricing (1M tokens) | Free tier + paid | $10 | $3-15 |
 
 ### Migration from OpenAI/Anthropic

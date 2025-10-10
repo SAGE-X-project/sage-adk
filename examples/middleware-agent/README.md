@@ -25,7 +25,7 @@ The example also shows how to create custom middleware:
 ```go
 customLogger := func(next middleware.Handler) middleware.Handler {
     return func(ctx context.Context, msg *types.Message) (*types.Message, error) {
-        log.Printf("🔵 Processing message: %s", msg.MessageID)
+        log.Printf(" Processing message: %s", msg.MessageID)
 
         // Add custom context
         ctx = middleware.ContextWithMetadata(ctx, map[string]interface{}{
@@ -36,7 +36,7 @@ customLogger := func(next middleware.Handler) middleware.Handler {
         resp, err := next(ctx, msg)
 
         if err != nil {
-            log.Printf("🔴 Processing failed: %v", err)
+            log.Printf(" Processing failed: %v", err)
         } else {
             log.Printf("🟢 Processing completed successfully")
         }

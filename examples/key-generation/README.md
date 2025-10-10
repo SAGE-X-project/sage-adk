@@ -48,10 +48,10 @@ go run -tags examples main.go -show-public
 
 Output:
 ```
-📋 Public Key (base64):
+ Public Key (base64):
 MCowBQYDK2VwAyEAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=
 
-📋 Public Key (hex):
+ Public Key (hex):
 5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c
 ```
 
