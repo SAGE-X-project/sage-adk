@@ -41,6 +41,30 @@ bin/
 *.a
 *.log
 
+# Example binaries (built Go executables)
+examples/*/anthropic-agent
+examples/*/distributed-tracing
+examples/*/function-calling
+examples/*/gemini-agent
+examples/*/key-generation
+examples/*/kubernetes-deployment
+examples/*/middleware-agent
+examples/*/monitoring-setup
+examples/*/multi-agent-chat
+examples/*/multi-llm-agent
+examples/*/multi-tenant
+examples/*/observability
+examples/*/orchestrator
+examples/*/postgres-storage
+examples/*/rate-limiting
+examples/*/redis-storage
+examples/*/sage-agent
+examples/*/sage-enabled-agent
+examples/*/simple-agent
+examples/*/stateful-agent
+examples/*/streaming-agent
+examples/*/tools-agent
+
 # Temporary files
 tmp/
 temp/
