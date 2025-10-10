@@ -204,3 +204,37 @@ func Is(err, target error) bool {
 func As(err error, target interface{}) bool {
 	return errors.As(err, target)
 }
+
+// IsCategory checks if an error belongs to a specific category.
+func IsCategory(err error, category ErrorCategory) bool {
+	var adkErr *Error
+	if errors.As(err, &adkErr) {
+		return adkErr.Category == category
+	}
+	return false
+}
+
+// IsInvalidInput checks if an error is an invalid input error.
+func IsInvalidInput(err error) bool {
+	return errors.Is(err, ErrInvalidInput) || IsCategory(err, CategoryValidation)
+}
+
+// IsUnauthorized checks if an error is an unauthorized error.
+func IsUnauthorized(err error) bool {
+	return errors.Is(err, ErrUnauthorized) || IsCategory(err, CategoryUnauthorized)
+}
+
+// IsNotFound checks if an error is a not found error.
+func IsNotFound(err error) bool {
+	return errors.Is(err, ErrNotFound) || IsCategory(err, CategoryNotFound)
+}
+
+// IsRateLimitExceeded checks if an error is a rate limit exceeded error.
+func IsRateLimitExceeded(err error) bool {
+	return errors.Is(err, ErrRateLimitExceeded)
+}
+
+// IsTimeout checks if an error is a timeout error.
+func IsTimeout(err error) bool {
+	return errors.Is(err, ErrTimeout) || errors.Is(err, ErrNetworkTimeout)
+}

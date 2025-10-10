@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sage-adk-config
+  namespace: sage-adk
+  labels:
+    app: sage-adk-agent
+data:
+  # Agent Configuration
+  agent.name: "production-agent"
+  agent.description: "SAGE ADK Production Agent"
+  agent.version: "1.1.0"
+
+  # Server Configuration
+  server.host: "0.0.0.0"
+  server.port: "8080"
+
+  # Protocol Configuration
+  protocol.mode: "auto"  # auto, a2a, or sage
+
+  # A2A Configuration
+  a2a.enabled: "true"
+  a2a.version: "0.2.2"
+  a2a.timeout: "30"
+
+  # Storage Configuration
+  storage.type: "redis"  # memory, redis, or postgres
+
+  # Redis Configuration
+  redis.address: "redis-master.sage-adk.svc.cluster.local:6379"
+  redis.password: ""
+  redis.db: "0"
+
+  # PostgreSQL Configuration
+  postgres.host: "postgres.sage-adk.svc.cluster.local"
+  postgres.port: "5432"
+  postgres.user: "sage_adk"
+  postgres.database: "sage_adk"
+  postgres.sslmode: "require"
+
+  # Logging Configuration
+  logging.level: "info"
+  logging.format: "json"
+
+  # Metrics Configuration
+  metrics.enabled: "true"
+  metrics.port: "8080"
+
+  # LLM Configuration (provider selection)
+  llm.provider: "openai"  # openai, anthropic, or gemini
+  llm.model: "gpt-4"
+
+  # config.yaml - Full configuration file
+  config.yaml: |
+    agent:
+      name: production-agent
+      description: SAGE ADK Production Agent
+      version: 1.1.0
+
+    server:
+      host: 0.0.0.0
+      port: 8080
+
+    protocol:
+      mode: auto
+
+    a2a:
+      enabled: true
+      version: 0.2.2
+      timeout: 30
+
+    storage:
+      type: redis
+      redis:
+        address: redis-master.sage-adk.svc.cluster.local:6379
+        password: ""
+        db: 0
+
+    logging:
+      level: info
+      format: json
+
+    metrics:
+      enabled: true
+      port: 8080
+
+    llm:
+      provider: openai
+      model: gpt-4

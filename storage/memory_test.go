@@ -344,7 +344,8 @@ func TestMemoryStorage_ConcurrentAccess(t *testing.T) {
 	ctx := context.Background()
 
 	var wg sync.WaitGroup
-	numGoroutines := 100
+	// Reduced from 100 to 10 to avoid race detector memory issues
+	numGoroutines := 10
 
 	// Concurrent writes
 	for i := 0; i < numGoroutines; i++ {

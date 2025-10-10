@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/sage-x-project/sage-adk/adapters/sage"
@@ -220,6 +221,11 @@ func Example_sessionManagement() {
 	// List all sessions
 	sessions := alice.ListSessions()
 	fmt.Printf("Alice has %d active sessions\n", len(sessions))
+
+	// Sort sessions by RemoteDID for deterministic output
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].RemoteDID < sessions[j].RemoteDID
+	})
 
 	for _, session := range sessions {
 		fmt.Printf("- Session with %s: sess_...\n", session.RemoteDID)

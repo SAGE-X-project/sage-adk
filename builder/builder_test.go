@@ -19,7 +19,9 @@ package builder
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/sage-x-project/sage-adk/adapters/llm"
 	"github.com/sage-x-project/sage-adk/config"
@@ -203,10 +205,15 @@ func TestBuilder_OnMessage(t *testing.T) {
 }
 
 func TestBuilder_BeforeStart(t *testing.T) {
-	hookCalled := false
+	var (
+		hookCalled bool
+		mu         sync.Mutex
+	)
 
 	hook := func(ctx context.Context) error {
+		mu.Lock()
 		hookCalled = true
+		mu.Unlock()
 		return nil
 	}
 
@@ -218,11 +225,22 @@ func TestBuilder_BeforeStart(t *testing.T) {
 		t.Fatalf("Build() error = %v", err)
 	}
 
-	// Start will call the hook (but will fail because Start not implemented yet)
-	// We just check the hook is set
-	_ = agent.Start(":8080")
+	// Start server in goroutine to avoid blocking
+	go func() {
+		_ = agent.Start(":18081") // Use different port to avoid conflicts
+	}()
 
-	if !hookCalled {
+	// Give it a moment to call the hook and let server fully start
+	time.Sleep(600 * time.Millisecond)
+
+	// Stop the agent
+	_ = agent.Stop(context.Background())
+
+	mu.Lock()
+	called := hookCalled
+	mu.Unlock()
+
+	if !called {
 		t.Error("BeforeStart hook was not called")
 	}
 }
@@ -306,8 +324,11 @@ func TestBuilder_FullyConfigured(t *testing.T) {
 	mockProvider := llm.NewMockProvider("test", []string{"response"})
 	memStorage := storage.NewMemoryStorage()
 
-	var beforeStartCalled bool
-	var afterStopCalled bool
+	var (
+		beforeStartCalled bool
+		afterStopCalled   bool
+		mu                sync.Mutex
+	)
 
 	agent, err := NewAgent("full-agent").
 		WithLLM(mockProvider).
@@ -317,11 +338,15 @@ func TestBuilder_FullyConfigured(t *testing.T) {
 			return nil
 		}).
 		BeforeStart(func(ctx context.Context) error {
+			mu.Lock()
 			beforeStartCalled = true
+			mu.Unlock()
 			return nil
 		}).
 		AfterStop(func(ctx context.Context) error {
+			mu.Lock()
 			afterStopCalled = true
+			mu.Unlock()
 			return nil
 		}).
 		Build()
@@ -342,14 +367,30 @@ func TestBuilder_FullyConfigured(t *testing.T) {
 		t.Error("Storage() is nil")
 	}
 
-	// Test hooks
-	_ = agent.Start(":8080")
-	if !beforeStartCalled {
+	// Test hooks - start in goroutine to avoid blocking
+	go func() {
+		_ = agent.Start(":18082") // Use different port to avoid conflicts
+	}()
+
+	// Give it a moment to call the BeforeStart hook and let server fully start
+	time.Sleep(600 * time.Millisecond)
+
+	mu.Lock()
+	beforeCalled := beforeStartCalled
+	mu.Unlock()
+
+	if !beforeCalled {
 		t.Error("BeforeStart hook not called")
 	}
 
+	// Stop the agent to trigger AfterStop hook
 	_ = agent.Stop(context.Background())
-	if !afterStopCalled {
+
+	mu.Lock()
+	afterCalled := afterStopCalled
+	mu.Unlock()
+
+	if !afterCalled {
 		t.Error("AfterStop hook not called")
 	}
 }

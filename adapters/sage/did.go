@@ -55,7 +55,7 @@ func (a *ethereumResolverAdapter) ResolveKEMKey(ctx context.Context, agentDID di
 		return nil, fmt.Errorf("agent DID %s is not active", agentDID)
 	}
 
-	return metadata.PublicKEMKey, nil
+	return metadata.PublicKey, nil
 }
 
 func (a *ethereumResolverAdapter) VerifyMetadata(ctx context.Context, agentDID did.AgentDID, metadata *did.AgentMetadata) (*did.VerificationResult, error) {
