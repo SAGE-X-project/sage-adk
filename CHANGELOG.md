@@ -7,39 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-10-11
+
 ### Added
-- Initial project structure
-- Core agent abstraction layer
-- A2A protocol adapter (sage-a2a-go integration)
-- SAGE protocol adapter (sage security integration)
-- LLM provider abstraction (OpenAI, Anthropic, Gemini)
-- Fluent API builder pattern
-- HTTP server implementation
-- Storage backends (Memory, Redis, PostgreSQL)
-- Configuration management (YAML, ENV)
-- Protocol switching logic (A2A/SAGE/Auto)
-- Comprehensive documentation
-- Example projects
-- Docker support
-- Makefile for common tasks
+- **Enterprise Features Complete**
+  - gRPC server support with A2A protocol integration
+  - Response caching system with LRU eviction
+  - Distributed tracing with OpenTelemetry and Jaeger
+  - Rate limiting with token bucket and sliding window algorithms
+  - Multi-tenant support with per-tenant isolation
+- **Observability Enhancements**
+  - Comprehensive test coverage for tracing package (72.7%)
+  - Comprehensive test coverage for cache package (62.1%)
+  - Full test suite for cmd/adk CLI tool (39.3%)
+- **Builder API Improvements**
+  - Added WithDescription() and WithVersion() methods
+  - Enhanced builder pattern for better agent construction
+- **Examples**
+  - Multi-agent chat system example
+  - Multi-tenant architecture example
+  - Rate limiting demonstration
+  - All examples build successfully
 
 ### Changed
-- N/A (initial release)
-
-### Deprecated
-- N/A
-
-### Removed
-- N/A
+- Migrated examples to new builder API pattern
+- Updated multi-agent-chat and multi-tenant examples to use builder pattern
+- Improved error handling in CLI commands
 
 ### Fixed
-- N/A
-
-### Security
-- SAGE protocol integration for secure communication
-- DID-based identity verification
-- RFC 9421 message signatures
-- End-to-end encryption support
+- Build failures in multi-agent-chat and multi-tenant examples
+- Git tracking of binary files (added to .gitignore)
+- Build constraint examples now compile with -tags flag
+- OpenTelemetry test API usage in tracing tests
 
 ## [0.1.0] - TBD
 
@@ -80,5 +79,6 @@ This is the initial alpha release of SAGE ADK. The framework provides:
 
 ---
 
-[Unreleased]: https://github.com/sage-x-project/sage-adk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sage-x-project/sage-adk/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/sage-x-project/sage-adk/releases/tag/v1.2.0
 [0.1.0]: https://github.com/sage-x-project/sage-adk/releases/tag/v0.1.0
