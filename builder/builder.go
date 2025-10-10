@@ -22,11 +22,13 @@ import (
 
 	"github.com/sage-x-project/sage-adk/adapters/a2a"
 	"github.com/sage-x-project/sage-adk/adapters/llm"
+	sageadapter "github.com/sage-x-project/sage-adk/adapters/sage"
 	"github.com/sage-x-project/sage-adk/config"
 	"github.com/sage-x-project/sage-adk/core/agent"
 	"github.com/sage-x-project/sage-adk/core/protocol"
 	"github.com/sage-x-project/sage-adk/pkg/errors"
 	"github.com/sage-x-project/sage-adk/storage"
+	sagecrypto "github.com/sage-x-project/sage/crypto"
 )
 
 // Builder provides a fluent API for constructing AI agents.
@@ -55,6 +57,10 @@ type Builder struct {
 
 	// Message handler
 	messageHandler agent.MessageHandler
+
+	// Cryptographic components (for SAGE protocol)
+	keyManager *sageadapter.KeyManager
+	keyPair    sagecrypto.KeyPair
 
 	// Lifecycle hooks
 	beforeStart func(context.Context) error
@@ -248,6 +254,65 @@ func (b *Builder) AfterStop(hook func(context.Context) error) *Builder {
 //	builder.WithConfig(customConfig)
 func (b *Builder) WithConfig(cfg *config.Config) *Builder {
 	b.config = cfg
+	return b
+}
+
+// WithKeyManager sets the key manager for the agent.
+//
+// The key manager handles key generation, storage, and cryptographic operations.
+// Required when using SAGE protocol.
+//
+// Example:
+//
+//	km := sage.NewKeyManager()
+//	builder.WithKeyManager(km)
+func (b *Builder) WithKeyManager(km *sageadapter.KeyManager) *Builder {
+	b.keyManager = km
+	return b
+}
+
+// WithKeyPair sets the key pair for the agent.
+//
+// The key pair is used for signing and encryption in SAGE protocol.
+// Required when using SAGE protocol.
+//
+// Example:
+//
+//	km := sage.NewKeyManager()
+//	kp, _ := km.Generate()
+//	builder.WithKeyPair(kp)
+func (b *Builder) WithKeyPair(kp sagecrypto.KeyPair) *Builder {
+	b.keyPair = kp
+	return b
+}
+
+// WithKeyPath loads a key pair from file and sets it for the agent.
+//
+// This is a convenience method that combines key loading and setting.
+// Requires that a key manager has been set first.
+//
+// Example:
+//
+//	km := sage.NewKeyManager()
+//	builder.WithKeyManager(km).WithKeyPath("./keys/agent.pem")
+func (b *Builder) WithKeyPath(path string) *Builder {
+	if b.keyManager == nil {
+		b.errors = append(b.errors,
+			errors.ErrInvalidInput.WithMessage("key manager required before loading key"))
+		return b
+	}
+
+	kp, err := b.keyManager.LoadFromFile(path)
+	if err != nil {
+		b.errors = append(b.errors,
+			errors.ErrInvalidInput.
+				WithMessage("failed to load key from file").
+				WithDetail("path", path).
+				WithDetail("error", err.Error()))
+		return b
+	}
+
+	b.keyPair = kp
 	return b
 }
 

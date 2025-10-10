@@ -375,3 +375,336 @@ func TestSigningManager_SignHandshakeMessages(t *testing.T) {
 		})
 	}
 }
+
+// ================== RFC 9421 Tests ==================
+
+func TestSigningManager_RFC9421_SignAndVerify(t *testing.T) {
+	sm := NewSigningManager()
+
+	// Generate Ed25519 key pair
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+
+	agentDID := "did:sage:ethereum:0xABC"
+	messageID := "msg-123"
+	body := []byte(`{"type":"test","content":"hello world"}`)
+	headers := map[string]string{
+		"content-type": "application/json",
+		"x-agent-id":   "test-agent",
+	}
+	keyID := "did:sage:ethereum:0xABC#key-1"
+
+	// Sign message using RFC 9421
+	message, err := sm.SignMessageRFC9421(agentDID, messageID, body, headers, privateKey, keyID)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify message structure
+	if message.AgentDID != agentDID {
+		t.Errorf("AgentDID = %s, want %s", message.AgentDID, agentDID)
+	}
+
+	if message.MessageID != messageID {
+		t.Errorf("MessageID = %s, want %s", message.MessageID, messageID)
+	}
+
+	if string(message.Body) != string(body) {
+		t.Errorf("Body = %s, want %s", string(message.Body), string(body))
+	}
+
+	if message.Algorithm != "EdDSA" {
+		t.Errorf("Algorithm = %s, want EdDSA", message.Algorithm)
+	}
+
+	if message.KeyID != keyID {
+		t.Errorf("KeyID = %s, want %s", message.KeyID, keyID)
+	}
+
+	if len(message.Signature) == 0 {
+		t.Error("Signature is empty")
+	}
+
+	// Verify signature using RFC 9421
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 failed: %v", err)
+	}
+}
+
+func TestSigningManager_SignMessageRFC9421_NilPrivateKey(t *testing.T) {
+	sm := NewSigningManager()
+
+	_, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte("test"),
+		nil,
+		nil, // nil private key
+		"key-1",
+	)
+
+	if err == nil {
+		t.Error("SignMessageRFC9421 should fail with nil private key")
+	}
+}
+
+func TestSigningManager_SignMessageRFC9421_EmptyAgentDID(t *testing.T) {
+	sm := NewSigningManager()
+
+	_, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	_, err := sm.SignMessageRFC9421(
+		"", // empty agent DID
+		"msg-123",
+		[]byte("test"),
+		nil,
+		privateKey,
+		"key-1",
+	)
+
+	if err == nil {
+		t.Error("SignMessageRFC9421 should fail with empty agent DID")
+	}
+}
+
+func TestSigningManager_SignMessageRFC9421_EmptyMessageID(t *testing.T) {
+	sm := NewSigningManager()
+
+	_, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	_, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"", // empty message ID
+		[]byte("test"),
+		nil,
+		privateKey,
+		"key-1",
+	)
+
+	if err == nil {
+		t.Error("SignMessageRFC9421 should fail with empty message ID")
+	}
+}
+
+func TestSigningManager_VerifyMessageRFC9421_NilMessage(t *testing.T) {
+	sm := NewSigningManager()
+
+	publicKey, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	err := sm.VerifyMessageRFC9421(nil, publicKey, nil)
+	if err == nil {
+		t.Error("VerifyMessageRFC9421 should fail with nil message")
+	}
+}
+
+func TestSigningManager_VerifyMessageRFC9421_NilPublicKey(t *testing.T) {
+	sm := NewSigningManager()
+
+	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Create a valid message first
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte("test"),
+		nil,
+		privateKey,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Try to verify with nil public key
+	err = sm.VerifyMessageRFC9421(message, nil, nil)
+	if err == nil {
+		t.Error("VerifyMessageRFC9421 should fail with nil public key")
+	}
+
+	// Verify with correct public key should succeed
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 should succeed with correct key: %v", err)
+	}
+}
+
+func TestSigningManager_RFC9421_WrongPublicKey(t *testing.T) {
+	sm := NewSigningManager()
+
+	// Generate two key pairs
+	publicKey1, privateKey1, _ := ed25519.GenerateKey(rand.Reader)
+	publicKey2, _, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Sign with key1
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte("test message"),
+		map[string]string{"content-type": "text/plain"},
+		privateKey1,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify with key1 (should succeed)
+	err = sm.VerifyMessageRFC9421(message, publicKey1, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 with correct key failed: %v", err)
+	}
+
+	// Verify with key2 (should fail)
+	err = sm.VerifyMessageRFC9421(message, publicKey2, nil)
+	if err == nil {
+		t.Error("VerifyMessageRFC9421 should fail with wrong public key")
+	}
+}
+
+func TestSigningManager_RFC9421_ModifiedMessage(t *testing.T) {
+	sm := NewSigningManager()
+
+	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Sign message
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte("original message"),
+		map[string]string{"content-type": "text/plain"},
+		privateKey,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify original message (should succeed)
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 failed: %v", err)
+	}
+
+	// Modify message body
+	message.Body = []byte("modified message")
+
+	// Verify modified message (should fail)
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err == nil {
+		t.Error("VerifyMessageRFC9421 should fail with modified message")
+	}
+}
+
+func TestSigningManager_RFC9421_WithHeaders(t *testing.T) {
+	sm := NewSigningManager()
+
+	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	headers := map[string]string{
+		"content-type":   "application/json",
+		"x-request-id":   "req-456",
+		"x-correlation":  "corr-789",
+		"authorization":  "Bearer test-token",
+	}
+
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte(`{"action":"test"}`),
+		headers,
+		privateKey,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify message
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify headers are preserved
+	for k, v := range headers {
+		if message.Headers[k] != v {
+			t.Errorf("Header %s = %s, want %s", k, message.Headers[k], v)
+		}
+	}
+}
+
+func TestSigningManager_RFC9421_EmptyBody(t *testing.T) {
+	sm := NewSigningManager()
+
+	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	// Sign message with empty body
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte{}, // empty body
+		nil,
+		privateKey,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify message
+	err = sm.VerifyMessageRFC9421(message, publicKey, nil)
+	if err != nil {
+		t.Errorf("VerifyMessageRFC9421 failed: %v", err)
+	}
+}
+
+func TestSigningManager_RFC9421_TimestampNoncePresent(t *testing.T) {
+	sm := NewSigningManager()
+
+	_, privateKey, _ := ed25519.GenerateKey(rand.Reader)
+
+	message, err := sm.SignMessageRFC9421(
+		"did:sage:ethereum:0xABC",
+		"msg-123",
+		[]byte("test"),
+		nil,
+		privateKey,
+		"key-1",
+	)
+	if err != nil {
+		t.Fatalf("SignMessageRFC9421 failed: %v", err)
+	}
+
+	// Verify timestamp is present and recent
+	if message.Timestamp.IsZero() {
+		t.Error("Timestamp should not be zero")
+	}
+
+	timeDiff := time.Since(message.Timestamp)
+	if timeDiff > 1*time.Second || timeDiff < 0 {
+		t.Errorf("Timestamp diff = %v, should be very recent", timeDiff)
+	}
+
+	// Verify nonce is present
+	if message.Nonce == "" {
+		t.Error("Nonce should not be empty")
+	}
+
+	// Verify signed fields includes required fields
+	expectedFields := []string{"agent_did", "message_id", "timestamp", "nonce", "body"}
+	for _, field := range expectedFields {
+		found := false
+		for _, sf := range message.SignedFields {
+			if sf == field {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("SignedFields missing required field: %s", field)
+		}
+	}
+}

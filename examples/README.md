@@ -51,7 +51,34 @@ go run -tags examples main.go
 - Secure key management
 - Network configuration
 
-### 3. Key Generation (`key-generation/`)
+### 3. SAGE-Enabled Agent (`sage-enabled-agent/`)
+
+**Difficulty**: Advanced
+**Protocol**: SAGE (Low-Level)
+**Features**: Direct SAGE adapter usage, message signing, network layer
+
+Demonstrates low-level SAGE adapter API for secure agent communication with Ed25519 signatures.
+
+```bash
+cd sage-enabled-agent
+# Interactive mode (single process)
+go run -tags examples main.go interactive
+
+# Distributed mode (two terminals)
+go run -tags examples main.go receiver  # Terminal 1
+go run -tags examples main.go sender    # Terminal 2
+```
+
+**What you'll learn:**
+- Low-level SAGE adapter API
+- Direct message signing with Ed25519
+- HTTP network layer implementation
+- Security metadata (nonce, timestamp, signature)
+- Replay attack protection
+- Signature verification pipeline
+- Distributed agent communication
+
+### 4. Key Generation (`key-generation/`)
 
 **Difficulty**: Beginner
 **Protocol**: N/A (Utility)
@@ -115,6 +142,7 @@ go run -tags examples ./examples/simple-agent/main.go
 |---------|----------|------------|----------|
 | `simple-agent` | A2A | ⭐ Basic | Quick start, learning basics |
 | `sage-agent` | SAGE | ⭐⭐ Intermediate | Production security, blockchain identity |
+| `sage-enabled-agent` | SAGE (Low-Level) | ⭐⭐⭐ Advanced | Understanding SAGE internals, custom transport |
 | `key-generation` | N/A | ⭐ Basic | Key management utility |
 
 ## Protocol Comparison

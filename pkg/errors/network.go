@@ -26,6 +26,9 @@ var (
 		Message:  "network request timed out",
 	}
 
+	// ErrTimeout is an alias for ErrNetworkTimeout for convenience.
+	ErrTimeout = ErrNetworkTimeout
+
 	// ErrNetworkUnavailable indicates network is unavailable.
 	ErrNetworkUnavailable = &Error{
 		Category: CategoryNetwork,
@@ -38,5 +41,12 @@ var (
 		Category: CategoryNetwork,
 		Code:     "CONNECTION_REFUSED",
 		Message:  "connection refused",
+	}
+
+	// ErrRateLimitExceeded indicates rate limit has been exceeded.
+	ErrRateLimitExceeded = &Error{
+		Category: CategoryNetwork,
+		Code:     "RATE_LIMIT_EXCEEDED",
+		Message:  "rate limit exceeded",
 	}
 )

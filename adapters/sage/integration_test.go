@@ -24,6 +24,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	adkconfig "github.com/sage-x-project/sage-adk/config"
+	"github.com/sage-x-project/sage-adk/pkg/types"
 )
 
 // TestIntegration_FullCommunicationFlow tests the complete SAGE communication flow
@@ -488,4 +491,209 @@ func TestIntegration_MessageTypes(t *testing.T) {
 			t.Logf("Successfully transmitted %s payload", tc.name)
 		})
 	}
+}
+
+// ==================== Adapter + Network Layer Integration Tests ====================
+
+// TestEndToEnd_AdapterMessageTransmission tests complete message sending and receiving
+// using Adapter + NetworkClient.
+func TestEndToEnd_AdapterMessageTransmission(t *testing.T) {
+	// Create temporary key files for both agents
+	tmpDir := t.TempDir()
+
+	// Generate keys for sender
+	senderKeyPath := tmpDir + "/sender-key.jwk"
+	senderKM := NewKeyManager()
+	senderKeyPair, err := senderKM.Generate()
+	if err != nil {
+		t.Fatalf("Failed to generate sender key: %v", err)
+	}
+	if err := senderKM.SaveToFile(senderKeyPair, senderKeyPath); err != nil {
+		t.Fatalf("Failed to save sender key: %v", err)
+	}
+
+	// Generate keys for receiver
+	receiverKeyPath := tmpDir + "/receiver-key.jwk"
+	receiverKM := NewKeyManager()
+	receiverKeyPair, err := receiverKM.Generate()
+	if err != nil {
+		t.Fatalf("Failed to generate receiver key: %v", err)
+	}
+	if err := receiverKM.SaveToFile(receiverKeyPair, receiverKeyPath); err != nil {
+		t.Fatalf("Failed to save receiver key: %v", err)
+	}
+
+	// Track received messages
+	var receivedMessage *types.Message
+	var mu sync.Mutex
+
+	// Create message handler
+	handler := func(ctx context.Context, msg *types.Message) (*types.Message, error) {
+		mu.Lock()
+		receivedMessage = msg
+		mu.Unlock()
+		return nil, nil
+	}
+
+	// Start receiver server
+	server := NewNetworkServer(":18082", handler)
+	go func() {
+		if err := server.Start(); err != nil && err.Error() != "http: Server closed" {
+			t.Logf("Server error: %v", err)
+		}
+	}()
+
+	// Wait for server to start
+	time.Sleep(100 * time.Millisecond)
+
+	// Ensure server cleanup
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		server.Stop(ctx)
+	}()
+
+	// Create sender adapter
+	senderCfg := &adkconfig.SAGEConfig{
+		Enabled:        true,
+		Network:        "ethereum",
+		DID:            "did:sage:eth:0xSENDER",
+		PrivateKeyPath: senderKeyPath,
+	}
+
+	senderAdapter, err := NewAdapter(senderCfg)
+	if err != nil {
+		t.Fatalf("Failed to create sender adapter: %v", err)
+	}
+
+	// Set remote endpoint
+	senderAdapter.SetRemoteEndpoint("http://localhost:18082/sage/message")
+
+	// Create test message
+	testMessage := types.NewMessage(
+		types.MessageRoleUser,
+		[]types.Part{types.NewTextPart("Hello from integration test!")},
+	)
+
+	// Send message
+	err = senderAdapter.SendMessage(context.Background(), testMessage)
+	if err != nil {
+		t.Fatalf("SendMessage() failed: %v", err)
+	}
+
+	// Wait for message to be received
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify message was received
+	mu.Lock()
+	defer mu.Unlock()
+
+	if receivedMessage == nil {
+		t.Fatal("No message was received")
+	}
+
+	// Verify message content
+	if len(receivedMessage.Parts) == 0 {
+		t.Fatal("Received message has no parts")
+	}
+
+	textPart, ok := receivedMessage.Parts[0].(*types.TextPart)
+	if !ok {
+		t.Fatal("First part is not a text part")
+	}
+
+	if textPart.Text != "Hello from integration test!" {
+		t.Errorf("Received text = %s, want 'Hello from integration test!'", textPart.Text)
+	}
+
+	// Verify security metadata was added
+	if receivedMessage.Security == nil {
+		t.Fatal("Received message has no security metadata")
+	}
+
+	if receivedMessage.Security.Mode != types.ProtocolModeSAGE {
+		t.Errorf("Security mode = %s, want SAGE", receivedMessage.Security.Mode)
+	}
+
+	if receivedMessage.Security.AgentDID != senderCfg.DID {
+		t.Errorf("Agent DID = %s, want %s", receivedMessage.Security.AgentDID, senderCfg.DID)
+	}
+
+	if receivedMessage.Security.Nonce == "" {
+		t.Error("Nonce should not be empty")
+	}
+
+	if receivedMessage.Security.Signature == nil {
+		t.Error("Message should be signed")
+	}
+
+	t.Logf("✅ End-to-end test passed: message sent, received, and verified")
+}
+
+// TestEndToEnd_WithoutEndpoint tests that messages can be prepared without endpoint.
+func TestEndToEnd_WithoutEndpoint(t *testing.T) {
+	// Create adapter without endpoint
+	cfg := &adkconfig.SAGEConfig{
+		Enabled: true,
+		Network: "ethereum",
+		DID:     "did:sage:eth:0xTEST",
+	}
+
+	adapter, err := NewAdapter(cfg)
+	if err != nil {
+		t.Fatalf("Failed to create adapter: %v", err)
+	}
+
+	// Create message
+	msg := types.NewMessage(
+		types.MessageRoleUser,
+		[]types.Part{types.NewTextPart("Test message")},
+	)
+
+	// Send message without endpoint (should prepare only)
+	err = adapter.SendMessage(context.Background(), msg)
+	if err != nil {
+		t.Errorf("SendMessage() should succeed without endpoint: %v", err)
+	}
+
+	// Verify security metadata was added
+	if msg.Security == nil {
+		t.Fatal("Security metadata should be added")
+	}
+
+	if msg.Security.Mode != types.ProtocolModeSAGE {
+		t.Errorf("Security mode = %s, want SAGE", msg.Security.Mode)
+	}
+
+	t.Logf("✅ Message prepared successfully without network transmission")
+}
+
+// TestEndToEnd_SetRemoteEndpoint tests endpoint configuration.
+func TestEndToEnd_SetRemoteEndpoint(t *testing.T) {
+	cfg := &adkconfig.SAGEConfig{
+		Enabled: true,
+		Network: "ethereum",
+		DID:     "did:sage:eth:0xTEST",
+	}
+
+	adapter, err := NewAdapter(cfg)
+	if err != nil {
+		t.Fatalf("Failed to create adapter: %v", err)
+	}
+
+	// Initially no endpoint
+	if adapter.GetRemoteEndpoint() != "" {
+		t.Error("Initial endpoint should be empty")
+	}
+
+	// Set endpoint
+	testEndpoint := "http://test.example.com/sage/message"
+	adapter.SetRemoteEndpoint(testEndpoint)
+
+	// Verify endpoint was set
+	if adapter.GetRemoteEndpoint() != testEndpoint {
+		t.Errorf("Endpoint = %s, want %s", adapter.GetRemoteEndpoint(), testEndpoint)
+	}
+
+	t.Logf("✅ Endpoint configuration works correctly")
 }

@@ -26,16 +26,20 @@ import (
 	"lukechampine.com/blake3"
 
 	"github.com/sage-x-project/sage-adk/pkg/errors"
+	"github.com/sage-x-project/sage-adk/pkg/types"
+	"github.com/sage-x-project/sage/core/rfc9421"
 )
 
 // SigningManager handles RFC 9421 message signing and verification.
 type SigningManager struct {
-	// No state needed - stateless operations
+	verifier *rfc9421.Verifier
 }
 
 // NewSigningManager creates a new signing manager.
 func NewSigningManager() *SigningManager {
-	return &SigningManager{}
+	return &SigningManager{
+		verifier: rfc9421.NewVerifier(),
+	}
 }
 
 // SignMessage signs a message using Ed25519 and RFC 9421 format.
@@ -111,6 +115,15 @@ func (sm *SigningManager) createSignatureBase(message interface{}) (string, erro
 
 	// Check if message has a Signature field and create a copy without it
 	switch v := message.(type) {
+	case *types.Message:
+		// Create a copy without signature for types.Message
+		copy := *v
+		if copy.Security != nil {
+			securityCopy := *copy.Security
+			securityCopy.Signature = nil
+			copy.Security = &securityCopy
+		}
+		messageToSign = copy
 	case *HandshakeRequest:
 		// Create a copy without signature
 		copy := *v
@@ -229,4 +242,92 @@ func (nc *NonceCache) cleanup() {
 	if oldestNonce != "" {
 		delete(nc.nonces, oldestNonce)
 	}
+}
+
+// SignMessageRFC9421 signs a message using RFC 9421 standard.
+// This is the preferred method for new code.
+func (sm *SigningManager) SignMessageRFC9421(
+	agentDID string,
+	messageID string,
+	body []byte,
+	headers map[string]string,
+	privateKey ed25519.PrivateKey,
+	keyID string,
+) (*rfc9421.Message, error) {
+	if privateKey == nil {
+		return nil, errors.ErrInvalidInput.WithMessage("private key is nil")
+	}
+
+	if agentDID == "" {
+		return nil, errors.ErrInvalidInput.WithMessage("agent DID is empty")
+	}
+
+	if messageID == "" {
+		return nil, errors.ErrInvalidInput.WithMessage("message ID is empty")
+	}
+
+	// Build RFC 9421 message
+	builder := rfc9421.NewMessageBuilder().
+		WithAgentDID(agentDID).
+		WithMessageID(messageID).
+		WithTimestamp(time.Now()).
+		WithNonce(generateNonce()).
+		WithBody(body).
+		WithAlgorithm(rfc9421.AlgorithmEdDSA).
+		WithKeyID(keyID).
+		WithSignedFields("agent_did", "message_id", "timestamp", "nonce", "body")
+
+	// Add headers
+	for k, v := range headers {
+		builder.AddHeader(k, v)
+	}
+
+	message := builder.Build()
+
+	// Create signature base
+	signatureBase := sm.verifier.ConstructSignatureBase(message)
+
+	// Sign with Ed25519 directly (no hashing - verifier expects raw signature base)
+	signature := ed25519.Sign(privateKey, []byte(signatureBase))
+	message.Signature = signature
+
+	return message, nil
+}
+
+// VerifyMessageRFC9421 verifies a message signature using RFC 9421 standard.
+// This is the preferred method for new code.
+func (sm *SigningManager) VerifyMessageRFC9421(
+	message *rfc9421.Message,
+	publicKey ed25519.PublicKey,
+	opts *rfc9421.VerificationOptions,
+) error {
+	if message == nil {
+		return errors.ErrInvalidInput.WithMessage("message is nil")
+	}
+
+	if publicKey == nil {
+		return errors.ErrInvalidInput.WithMessage("public key is nil")
+	}
+
+	if opts == nil {
+		opts = rfc9421.DefaultVerificationOptions()
+	}
+
+	// Use RFC 9421 verifier
+	if err := sm.verifier.VerifySignature(publicKey, message, opts); err != nil {
+		return errors.ErrSignatureInvalid.
+			WithMessage("RFC 9421 signature verification failed").
+			WithDetail("error", err.Error())
+	}
+
+	return nil
+}
+
+// generateNonce generates a random nonce for replay protection.
+func generateNonce() string {
+	// Use timestamp + random component
+	timestamp := time.Now().UnixNano()
+	return base64.StdEncoding.EncodeToString([]byte(
+		base64.StdEncoding.EncodeToString([]byte(string(rune(timestamp)))),
+	))
 }

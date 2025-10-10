@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Jaeger all-in-one (includes collector, query, UI)
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    ports:
+      - "5775:5775/udp"   # zipkin compact thrift
+      - "6831:6831/udp"   # jaeger compact thrift
+      - "6832:6832/udp"   # jaeger binary thrift
+      - "5778:5778"       # serve configs
+      - "16686:16686"     # UI
+      - "14268:14268"     # jaeger collector HTTP
+      - "14250:14250"     # model.proto gRPC
+      - "9411:9411"       # zipkin
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - tracing
+
+  # OpenTelemetry Collector (optional, for advanced scenarios)
+  otel-collector:
+    image: otel/opentelemetry-collector:0.88.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics
+      - "13133:13133" # health check
+    depends_on:
+      - jaeger
+    networks:
+      - tracing
+
+  # Example traced agent
+  traced-agent:
+    build: ../../
+    ports:
+      - "8080:8080"
+    environment:
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTEL_SERVICE_NAME=sage-agent-1
+      - OTEL_TRACES_SAMPLER=always_on
+    depends_on:
+      - jaeger
+    networks:
+      - tracing
+
+networks:
+  tracing:
+    driver: bridge

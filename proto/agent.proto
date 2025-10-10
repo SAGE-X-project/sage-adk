@@ -1,0 +1,227 @@
+// Copyright (C) 2025 sage-x-project
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
+syntax = "proto3";
+
+package sage.adk.v1;
+
+option go_package = "github.com/sage-x-project/sage-adk/proto/pb;pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// AgentService defines the gRPC service for SAGE ADK agents
+service AgentService {
+  // SendMessage sends a message to the agent and receives a response
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+
+  // StreamMessages enables bidirectional streaming communication
+  rpc StreamMessages(stream StreamMessageRequest) returns (stream StreamMessageResponse);
+
+  // GetAgentInfo returns information about the agent
+  rpc GetAgentInfo(GetAgentInfoRequest) returns (GetAgentInfoResponse);
+
+  // HealthCheck checks if the agent is healthy
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// MessageRole represents the role of the message sender
+enum MessageRole {
+  MESSAGE_ROLE_UNSPECIFIED = 0;
+  MESSAGE_ROLE_USER = 1;
+  MESSAGE_ROLE_AGENT = 2;
+  MESSAGE_ROLE_SYSTEM = 3;
+}
+
+// PartKind represents the type of message part
+enum PartKind {
+  PART_KIND_UNSPECIFIED = 0;
+  PART_KIND_TEXT = 1;
+  PART_KIND_FILE = 2;
+  PART_KIND_DATA = 3;
+}
+
+// TextPart represents a text segment in a message
+message TextPart {
+  string kind = 1;
+  string text = 2;
+  google.protobuf.Struct metadata = 3;
+}
+
+// FileContent represents file data (bytes or URI)
+message FileContent {
+  oneof content {
+    FileWithBytes bytes = 1;
+    FileWithURI uri = 2;
+  }
+}
+
+// FileWithBytes represents file data with embedded content
+message FileWithBytes {
+  string name = 1;
+  string mime_type = 2;
+  bytes bytes = 3;
+}
+
+// FileWithURI represents file data with URI reference
+message FileWithURI {
+  string name = 1;
+  string mime_type = 2;
+  string uri = 3;
+}
+
+// FilePart represents a file included in a message
+message FilePart {
+  string kind = 1;
+  FileContent file = 2;
+  google.protobuf.Struct metadata = 3;
+}
+
+// DataPart represents arbitrary structured data
+message DataPart {
+  string kind = 1;
+  google.protobuf.Struct data = 2;
+  google.protobuf.Struct metadata = 3;
+}
+
+// Part represents a message part (text, file, or data)
+message Part {
+  oneof part {
+    TextPart text = 1;
+    FilePart file = 2;
+    DataPart data = 3;
+  }
+}
+
+// Message represents a single message exchange
+message Message {
+  string message_id = 1;
+  string context_id = 2;
+  MessageRole role = 3;
+  repeated Part parts = 4;
+  string kind = 5;
+  google.protobuf.Struct metadata = 6;
+
+  // A2A optional fields
+  string task_id = 7;
+  repeated string reference_task_ids = 8;
+  repeated string extensions = 9;
+
+  // Timestamps
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// SendMessageRequest for sending a message to the agent
+message SendMessageRequest {
+  Message message = 1;
+
+  // Request options
+  int32 timeout_seconds = 2;
+  bool stream = 3;
+}
+
+// SendMessageResponse from the agent
+message SendMessageResponse {
+  Message message = 1;
+
+  // Response metadata
+  int32 status_code = 2;
+  string error = 3;
+  google.protobuf.Timestamp processed_at = 4;
+}
+
+// StreamMessageRequest for streaming communication
+message StreamMessageRequest {
+  oneof request {
+    Message message = 1;
+    StreamControl control = 2;
+  }
+}
+
+// StreamControl for controlling the stream
+message StreamControl {
+  enum ControlType {
+    CONTROL_TYPE_UNSPECIFIED = 0;
+    CONTROL_TYPE_PING = 1;
+    CONTROL_TYPE_CLOSE = 2;
+  }
+
+  ControlType type = 1;
+  google.protobuf.Struct data = 2;
+}
+
+// StreamMessageResponse from streaming
+message StreamMessageResponse {
+  oneof response {
+    Message message = 1;
+    StreamStatus status = 2;
+  }
+}
+
+// StreamStatus for stream state information
+message StreamStatus {
+  enum StatusType {
+    STATUS_TYPE_UNSPECIFIED = 0;
+    STATUS_TYPE_PONG = 1;
+    STATUS_TYPE_CLOSED = 2;
+    STATUS_TYPE_ERROR = 3;
+  }
+
+  StatusType type = 1;
+  string message = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// GetAgentInfoRequest to retrieve agent information
+message GetAgentInfoRequest {
+  // Empty for now
+}
+
+// GetAgentInfoResponse with agent information
+message GetAgentInfoResponse {
+  AgentCard agent_card = 1;
+}
+
+// AgentCard represents agent metadata
+message AgentCard {
+  string name = 1;
+  string description = 2;
+  string version = 3;
+  repeated string capabilities = 4;
+  repeated string protocols = 5;
+  google.protobuf.Struct metadata = 6;
+}
+
+// HealthCheckRequest to check agent health
+message HealthCheckRequest {
+  string service = 1;
+}
+
+// HealthCheckResponse with health status
+message HealthCheckResponse {
+  enum ServingStatus {
+    SERVING_STATUS_UNKNOWN = 0;
+    SERVING_STATUS_SERVING = 1;
+    SERVING_STATUS_NOT_SERVING = 2;
+    SERVING_STATUS_SERVICE_UNKNOWN = 3;
+  }
+
+  ServingStatus status = 1;
+  string message = 2;
+  google.protobuf.Timestamp checked_at = 3;
+}
