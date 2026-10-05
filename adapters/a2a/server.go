@@ -19,6 +19,9 @@ package a2a
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"time"
 
 	"github.com/sage-x-project/sage-adk/core/agent"
 	"github.com/sage-x-project/sage-adk/pkg/types"
@@ -31,8 +34,9 @@ import (
 //
 // It integrates with the agent's message handler to process incoming requests.
 type Server struct {
-	server  *a2aserver.A2AServer
-	handler agent.MessageHandler
+	server     *a2aserver.A2AServer
+	handler    agent.MessageHandler
+	httpServer *http.Server
 }
 
 // ServerConfig configures the A2A server.
@@ -84,6 +88,12 @@ func NewServer(config *ServerConfig) (*Server, error) {
 	return &Server{
 		server:  a2aServer,
 		handler: config.MessageHandler,
+		httpServer: &http.Server{
+			Handler:      a2aServer.Handler(),
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		},
 	}, nil
 }
 
@@ -91,13 +101,26 @@ func NewServer(config *ServerConfig) (*Server, error) {
 //
 // This is a blocking call that returns when the server stops.
 func (s *Server) Start(addr string) error {
-	return s.server.Start(addr)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	// The ADK owns its HTTP lifecycle; do not race the upstream Start/Stop field.
+	err = s.httpServer.Serve(listener)
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
 }
 
 // Stop gracefully stops the HTTP server.
 func (s *Server) Stop(ctx context.Context) error {
-	return s.server.Stop(ctx)
+	return s.httpServer.Shutdown(ctx)
 }
+
+// Handler returns the legacy A2A HTTP handler for embedding in an owned server.
+// It does not add the protected SAGE 0.10.0 admission boundary.
+func (s *Server) Handler() http.Handler { return s.httpServer.Handler }
 
 // messageProcessor implements the taskmanager.MessageProcessor interface
 // to integrate with the agent's message handler.
@@ -129,6 +152,7 @@ func (p *messageProcessor) ProcessMessage(
 	// For now, return a simple response message
 	// In a real implementation, this would be the agent's actual response
 	response := &a2aprotocol.Message{
+		Kind:  a2aprotocol.KindMessage,
 		Role:  a2aprotocol.MessageRoleAgent,
 		Parts: []a2aprotocol.Part{},
 	}

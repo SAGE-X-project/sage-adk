@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SAGE ADK PostgreSQL Storage Example ===\n")
+	fmt.Print("=== SAGE ADK PostgreSQL Storage Example ===\n\n")
 
 	// Create PostgreSQL storage
 	config := storage.DefaultPostgresConfig()

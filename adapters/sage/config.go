@@ -23,14 +23,14 @@ import (
 	"path/filepath"
 	"time"
 
-	sageconfig "github.com/sage-x-project/sage/config"
+	sageconfig "github.com/sage-x-project/sage-adk/adapters/sage/configmodel"
 	adkconfig "github.com/sage-x-project/sage-adk/config"
 )
 
-// Config wraps sage library config with ADK-specific extensions.
+// Config holds ADK-owned connection options and agent identity.
 // It provides a bridge between sage-adk configuration and the sage library.
 type Config struct {
-	// Embed sage library config
+	// Embed ADK-owned connection options
 	*sageconfig.Config
 
 	// ADK-specific fields
@@ -38,9 +38,7 @@ type Config struct {
 	PrivateKeyPath string // Path to the private key file
 }
 
-// FromADKConfig converts ADK SAGE configuration to sage library configuration.
-// This function maps sage-adk's simplified configuration to the more detailed
-// sage library configuration structure.
+// FromADKConfig converts application settings to the ADK adapter options.
 func FromADKConfig(adkCfg *adkconfig.SAGEConfig) (*Config, error) {
 	if adkCfg == nil {
 		return nil, fmt.Errorf("ADK config cannot be nil")
@@ -68,11 +66,11 @@ func FromADKConfig(adkCfg *adkconfig.SAGEConfig) (*Config, error) {
 		NetworkRPC:     adkCfg.RPCEndpoint,
 		ContractAddr:   adkCfg.ContractAddress,
 		ChainID:        chainID,
-		GasLimit:       3000000,                    // Default gas limit
-		MaxGasPrice:    big.NewInt(100000000000),   // 100 gwei
-		MaxRetries:     3,                          // Default retries
-		RetryDelay:     time.Second,                // 1 second retry delay
-		RequestTimeout: 30 * time.Second,           // 30 second timeout
+		GasLimit:       3000000,                  // Default gas limit
+		MaxGasPrice:    big.NewInt(100000000000), // 100 gwei
+		MaxRetries:     3,                        // Default retries
+		RetryDelay:     time.Second,              // 1 second retry delay
+		RequestTimeout: 30 * time.Second,         // 30 second timeout
 	}
 
 	// Create DID configuration
@@ -80,7 +78,7 @@ func FromADKConfig(adkCfg *adkconfig.SAGEConfig) (*Config, error) {
 		RegistryAddress: adkCfg.ContractAddress,
 		Method:          "sage",
 		Network:         adkCfg.Network,
-		CacheSize:       1000,    // Default cache size
+		CacheSize:       1000, // Default cache size
 		CacheTTL:        adkCfg.CacheTTL,
 	}
 
@@ -105,7 +103,7 @@ func FromADKConfig(adkCfg *adkconfig.SAGEConfig) (*Config, error) {
 		Output: "stdout",
 	}
 
-	// Create sage library config
+	// Create ADK adapter options
 	sageCfg := &sageconfig.Config{
 		Environment: getEnvironmentFromNetwork(adkCfg.Network),
 		Blockchain:  blockchainCfg,

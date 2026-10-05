@@ -12,6 +12,7 @@ This example demonstrates how to build a multi-tenant agent system with:
   - Tenant authentication
 
 Run:
+
 	go run main.go
 */
 package main
@@ -23,11 +24,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sage-x-project/sage-adk/agent"
 	"github.com/sage-x-project/sage-adk/cache"
+	"github.com/sage-x-project/sage-adk/core/agent"
 	"github.com/sage-x-project/sage-adk/pkg/types"
 	"github.com/sage-x-project/sage-adk/ratelimit"
-	"github.com/sage-x-project/sage-adk/server"
 	"github.com/sage-x-project/sage-adk/storage"
 )
 
@@ -35,17 +35,17 @@ import (
 type TenantConfig struct {
 	ID          string
 	Name        string
-	RateLimit   int           // Requests per minute
-	StorageType string        // "memory" or "redis"
-	CacheSize   int           // Max cache entries
-	Features    []string      // Enabled features
+	RateLimit   int      // Requests per minute
+	StorageType string   // "memory" or "redis"
+	CacheSize   int      // Max cache entries
+	Features    []string // Enabled features
 }
 
 // TenantManager manages multiple tenants
 type TenantManager struct {
-	tenants   map[string]*Tenant
-	storage   storage.Storage
-	cache     cache.Cache
+	tenants map[string]*Tenant
+	storage storage.Storage
+	cache   cache.Cache
 }
 
 // Tenant represents a single tenant instance
@@ -68,7 +68,7 @@ type TenantStats struct {
 }
 
 func main() {
-	fmt.Println("=== SAGE ADK Multi-Tenant Example ===\n")
+	fmt.Print("=== SAGE ADK Multi-Tenant Example ===\n\n")
 
 	// Create tenant manager
 	manager := NewTenantManager()
@@ -78,7 +78,7 @@ func main() {
 		{
 			ID:          "tenant-basic",
 			Name:        "Basic Corp",
-			RateLimit:   10,  // 10 req/min
+			RateLimit:   10, // 10 req/min
 			StorageType: "memory",
 			CacheSize:   100,
 			Features:    []string{"basic-chat"},
@@ -202,17 +202,14 @@ func (tm *TenantManager) RegisterTenant(config TenantConfig) error {
 	// Create agent with tenant-specific handler
 	agentHandler := createTenantHandler(config)
 
-	agentImpl := agent.NewAgent(agent.AgentConfig{
-		Name:        config.Name,
-		Description: fmt.Sprintf("Agent for %s", config.Name),
-		Version:     "1.0.0",
-	})
-
-	agentImpl.SetHandler(agentHandler)
-
-	// Add tenant-specific middleware
-	agentImpl.UseMiddleware(createRateLimitMiddleware(rateLimiter))
-	agentImpl.UseMiddleware(createTenantLoggingMiddleware(config.ID))
+	agentHandler = createRateLimitMiddleware(rateLimiter)(agentHandler)
+	agentHandler = createTenantLoggingMiddleware(config.ID)(agentHandler)
+	agentImpl, err := agent.NewAgent(config.Name).
+		WithDescription(fmt.Sprintf("Agent for %s", config.Name)).
+		WithVersion("1.0.0").OnMessage(agentHandler).Build()
+	if err != nil {
+		return err
+	}
 
 	tenant := &Tenant{
 		config:      config,
@@ -265,7 +262,7 @@ func (tm *TenantManager) HandleTenantRequest(w http.ResponseWriter, r *http.Requ
 	latency := time.Since(start)
 	tenant.stats.AverageLatency =
 		(tenant.stats.AverageLatency*time.Duration(tenant.stats.AllowedRequests-1) + latency) /
-		time.Duration(tenant.stats.AllowedRequests)
+			time.Duration(tenant.stats.AllowedRequests)
 
 	// Return response
 	w.Header().Set("Content-Type", "text/plain")
@@ -298,10 +295,7 @@ func createTenantHandler(config TenantConfig) agent.MessageHandler {
 		response += fmt.Sprintf("Available features: %v\n", config.Features)
 		response += fmt.Sprintf("Processing with %s tier configuration", getTier(config))
 
-		return msgCtx.Reply(types.NewMessage(
-			types.MessageRoleAssistant,
-			[]types.Part{types.NewTextPart(response)},
-		))
+		return msgCtx.Reply(response)
 	}
 }
 
@@ -309,13 +303,8 @@ func createTenantHandler(config TenantConfig) agent.MessageHandler {
 func createRateLimitMiddleware(limiter ratelimit.Limiter) func(agent.MessageHandler) agent.MessageHandler {
 	return func(next agent.MessageHandler) agent.MessageHandler {
 		return func(ctx context.Context, msgCtx agent.MessageContext) error {
-			// Extract tenant ID
+			// Each tenant owns its limiter instance.
 			tenantID := "default"
-			if metadata := msgCtx.Message().Metadata; metadata != nil {
-				if id, ok := metadata["tenant_id"].(string); ok {
-					tenantID = id
-				}
-			}
 
 			// Check rate limit
 			if !limiter.Allow(tenantID) {
@@ -332,7 +321,7 @@ func createTenantLoggingMiddleware(tenantID string) func(agent.MessageHandler) a
 	return func(next agent.MessageHandler) agent.MessageHandler {
 		return func(ctx context.Context, msgCtx agent.MessageContext) error {
 			start := time.Now()
-			log.Printf("[%s] Processing message: %s", tenantID, msgCtx.Message().MessageID)
+			log.Printf("[%s] Processing message: %s", tenantID, msgCtx.MessageID())
 
 			err := next(ctx, msgCtx)
 
@@ -362,7 +351,7 @@ func getTier(config TenantConfig) string {
 func runSimulation(manager *TenantManager) {
 	time.Sleep(2 * time.Second)
 
-	fmt.Println("\n=== Running Simulation ===\n")
+	fmt.Print("\n=== Running Simulation ===\n\n")
 
 	// Simulate requests from different tenants
 	scenarios := []struct {
@@ -393,11 +382,11 @@ func runSimulation(manager *TenantManager) {
 
 		fmt.Printf("  ✓ Allowed: %d\n", allowed)
 		fmt.Printf("  ✗ Denied: %d\n", denied)
-		fmt.Printf("  Rate Limit: %d req/min\n\n", tenant.config.RateLimit)
+		fmt.Printf("  Rate Limit: %d req/min\n\n", manager.tenants[scenario.tenantID].config.RateLimit)
 	}
 
 	// Print final stats
-	fmt.Println("=== Final Statistics ===\n")
+	fmt.Print("=== Final Statistics ===\n\n")
 	stats := manager.GetAllStats()
 	for id, stat := range stats {
 		tenant := manager.tenants[id]

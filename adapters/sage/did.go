@@ -21,15 +21,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sage-x-project/sage/did"
-	"github.com/sage-x-project/sage/did/ethereum"
+	"github.com/sage-x-project/sage/pkg/agent/did"
+	"github.com/sage-x-project/sage/pkg/agent/did/ethereum"
 )
 
 // ethereumResolverAdapter adapts EthereumClient to the did.Resolver interface.
 // This is needed because EthereumClient returns crypto.PublicKey while
 // did.Resolver expects interface{} for ResolvePublicKey.
 type ethereumResolverAdapter struct {
-	client *ethereum.EthereumClient
+	client *ethereum.AgentCardClient
 }
 
 func (a *ethereumResolverAdapter) Resolve(ctx context.Context, agentDID did.AgentDID) (*did.AgentMetadata, error) {
@@ -46,16 +46,7 @@ func (a *ethereumResolverAdapter) ResolvePublicKey(ctx context.Context, agentDID
 }
 
 func (a *ethereumResolverAdapter) ResolveKEMKey(ctx context.Context, agentDID did.AgentDID) (interface{}, error) {
-	metadata, err := a.client.Resolve(ctx, agentDID)
-	if err != nil {
-		return nil, err
-	}
-
-	if !metadata.IsActive {
-		return nil, fmt.Errorf("agent DID %s is not active", agentDID)
-	}
-
-	return metadata.PublicKey, nil
+	return a.client.ResolveKEMKey(ctx, agentDID)
 }
 
 func (a *ethereumResolverAdapter) VerifyMetadata(ctx context.Context, agentDID did.AgentDID, metadata *did.AgentMetadata) (*did.VerificationResult, error) {
@@ -106,7 +97,7 @@ func NewDIDResolver(cfg *Config) (*DIDResolver, error) {
 	switch cfg.DID.Network {
 	case "ethereum", "mainnet", "sepolia", "goerli", "local", "localhost":
 		// Create Ethereum resolver
-		ethClient, err := ethereum.NewEthereumClient(registryConfig)
+		ethClient, err := ethereum.NewAgentCardClient(registryConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Ethereum resolver: %w", err)
 		}
@@ -115,7 +106,7 @@ func NewDIDResolver(cfg *Config) (*DIDResolver, error) {
 	case "kaia", "cypress", "kairos", "kaia-testnet":
 		// Kaia uses Ethereum-compatible resolver
 		registryConfig.Chain = did.ChainEthereum // Kaia is Ethereum-compatible
-		ethClient, err := ethereum.NewEthereumClient(registryConfig)
+		ethClient, err := ethereum.NewAgentCardClient(registryConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Kaia resolver: %w", err)
 		}
@@ -167,7 +158,7 @@ func NewMultiChainDIDResolver(configs map[string]*Config) (*DIDResolver, error) 
 		}
 
 		// Create chain-specific resolver
-		ethClient, err := ethereum.NewEthereumClient(registryConfig)
+		ethClient, err := ethereum.NewAgentCardClient(registryConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create resolver for %s: %w", network, err)
 		}

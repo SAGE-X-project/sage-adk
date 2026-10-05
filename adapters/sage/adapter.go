@@ -30,48 +30,22 @@ import (
 	"github.com/sage-x-project/sage-adk/core/protocol"
 	"github.com/sage-x-project/sage-adk/pkg/errors"
 	"github.com/sage-x-project/sage-adk/pkg/types"
-	"github.com/sage-x-project/sage/core"
-	sagecrypto "github.com/sage-x-project/sage/crypto"
-	"github.com/sage-x-project/sage/crypto/formats"
-	"github.com/sage-x-project/sage/crypto/keys"
-	"github.com/sage-x-project/sage/crypto/storage"
+	"github.com/sage-x-project/sage/pkg/agent/core"
 )
-
-func init() {
-	// Initialize SAGE crypto format handlers (JWK, PEM)
-	// This allows sage-adk to use all crypto formats supported by SAGE
-	sagecrypto.SetFormatConstructors(
-		func() sagecrypto.KeyExporter { return formats.NewJWKExporter() },
-		func() sagecrypto.KeyExporter { return formats.NewPEMExporter() },
-		func() sagecrypto.KeyImporter { return formats.NewJWKImporter() },
-		func() sagecrypto.KeyImporter { return formats.NewPEMImporter() },
-	)
-
-	// Initialize key generators
-	sagecrypto.SetKeyGenerators(
-		func() (sagecrypto.KeyPair, error) { return keys.GenerateEd25519KeyPair() },
-		func() (sagecrypto.KeyPair, error) { return keys.GenerateSecp256k1KeyPair() },
-	)
-
-	// Initialize storage constructors
-	sagecrypto.SetStorageConstructors(
-		func() sagecrypto.KeyStorage { return storage.NewMemoryKeyStorage() },
-	)
-}
 
 // Adapter implements the ProtocolAdapter interface for SAGE protocol.
 type Adapter struct {
-	core            *core.Core
-	config          *config.SAGEConfig
-	agentDID        string
-	signingManager  *SigningManager
-	nonceCache      *NonceCache
-	didResolver     *DIDResolver
-	keyManager      *KeyManager
-	privateKey      ed25519.PrivateKey
-	networkClient   *NetworkClient
-	remoteEndpoint  string // Remote agent endpoint for message transmission
-	mu              sync.RWMutex
+	core           *core.Core
+	config         *config.SAGEConfig
+	agentDID       string
+	signingManager *SigningManager
+	nonceCache     *NonceCache
+	didResolver    *DIDResolver
+	keyManager     *KeyManager
+	privateKey     ed25519.PrivateKey
+	networkClient  *NetworkClient
+	remoteEndpoint string // Remote agent endpoint for message transmission
+	mu             sync.RWMutex
 }
 
 // NewAdapter creates a new SAGE protocol adapter.
