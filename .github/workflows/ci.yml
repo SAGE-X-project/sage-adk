@@ -1,0 +1,55 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    name: Compatibility (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.8'
+          cache-dependency-path: |
+            go.sum
+            verification/library-consumer/go.sum
+      - name: Verify dependencies and build
+        run: |
+          go mod download
+          go mod verify
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          go build -mod=readonly ./...
+          go vet -mod=readonly ./...
+      - name: Unit and safe loopback tests
+        run: go test -mod=readonly -race -timeout 10m ./...
+      - name: External library consumer
+        working-directory: verification/library-consumer
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          go test -mod=readonly -race -timeout 1m ./...
+      - name: CLI smoke check
+        run: |
+          go build -mod=readonly -o "$RUNNER_TEMP/sage-adk" ./cmd/adk
+          "$RUNNER_TEMP/sage-adk" version

@@ -362,11 +362,23 @@ agent := builder.NewAgent("my-agent").
     Build()
 ```
 
+## Public dependency compatibility
+
+Clean checkouts use pinned public modules and require no sibling repositories.
+See the [migration design](docs/design-20261006-041500-v1.0.md) for the
+SAGE public import paths, ADK-owned configuration types and key-manager changes.
+The existing A2A adapter retains published tRPC v0.2.2; adopting the newer SAGE
+A2A fork is separate work. Generated bindings for `proto/agent.proto` are included.
+
+This restores build compatibility. The legacy signing/transport helpers do not
+establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Guard capture,
+current authority providers and final tool execution admission still need binding.
+
 ## Development
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.26.0 or later (tested toolchain: Go 1.26.8)
 - OpenAI API key for testing
 
 ### Build and Test
@@ -392,17 +404,11 @@ go test ./adapters/llm
 
 ### Test Results
 
-All 253 tests passing:
--  adapters/a2a: 18 tests
--  adapters/llm: 26 tests
--  adapters/sage: 8 tests
--  builder: 17 tests
--  config: 28 tests
--  core/agent: 18 tests
--  core/protocol: 18 tests
--  pkg/errors: 36 tests
--  pkg/types: 58 tests
--  storage: 26 tests
+The public dependency migration runs `go build ./...`, `go vet ./...`,
+`go test -race ./...`, the [external library consumer](verification/library-consumer/)
+and a CLI version smoke check. CI repeats these on Linux and macOS.
+Service-dependent and tagged examples require their own configured environments;
+these checks do not establish deployed SAGE 0.10.0 conformance.
 
 ## Roadmap
 
@@ -457,8 +463,20 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [sage-a2a-go](https://github.com/sage-x-project/sage-a2a-go) - A2A protocol
 - [go-openai](https://github.com/sashabaranov/go-openai) - OpenAI client
 
-### Development
-- Go 1.21+
+### Public dependency compatibility
+
+Clean checkouts use pinned public modules and require no sibling repositories.
+See the [migration design](docs/design-20261006-041500-v1.0.md) for the
+SAGE public import paths, ADK-owned configuration types and key-manager changes.
+The existing A2A adapter retains published tRPC v0.2.2; adopting the newer SAGE
+A2A fork is separate work. Generated bindings for `proto/agent.proto` are included.
+
+This restores build compatibility. The legacy signing/transport helpers do not
+establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Guard capture,
+current authority providers and final tool execution admission still need binding.
+
+## Development
+- Go 1.26.0+
 - Make
 - Git
 

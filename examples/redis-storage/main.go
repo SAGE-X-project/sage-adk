@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SAGE ADK Redis Storage Example ===\n")
+	fmt.Print("=== SAGE ADK Redis Storage Example ===\n\n")
 
 	// Create Redis storage
 	config := storage.DefaultRedisConfig()

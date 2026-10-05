@@ -27,10 +27,11 @@ import (
 
 	"github.com/sage-x-project/sage-adk/pkg/errors"
 	"github.com/sage-x-project/sage-adk/pkg/types"
-	"github.com/sage-x-project/sage/core/rfc9421"
+	"github.com/sage-x-project/sage/pkg/agent/core/rfc9421"
 )
 
-// SigningManager handles RFC 9421 message signing and verification.
+// SigningManager implements the legacy ADK envelope and core message helpers.
+// These helpers do not establish SAGE 0.10.0 or RFC 9421 HTTP conformance.
 type SigningManager struct {
 	verifier *rfc9421.Verifier
 }
@@ -42,7 +43,7 @@ func NewSigningManager() *SigningManager {
 	}
 }
 
-// SignMessage signs a message using Ed25519 and RFC 9421 format.
+// SignMessage signs the legacy ADK JSON/BLAKE3 envelope with Ed25519.
 func (sm *SigningManager) SignMessage(message interface{}, privateKey ed25519.PrivateKey, keyID string) (*SignatureEnvelope, error) {
 	if privateKey == nil {
 		return nil, errors.ErrInvalidInput.WithMessage("private key is nil")
@@ -71,7 +72,7 @@ func (sm *SigningManager) SignMessage(message interface{}, privateKey ed25519.Pr
 	}, nil
 }
 
-// VerifySignature verifies a message signature using Ed25519 and RFC 9421.
+// VerifySignature verifies the legacy ADK JSON/BLAKE3 envelope.
 func (sm *SigningManager) VerifySignature(message interface{}, signature *SignatureEnvelope, publicKey ed25519.PublicKey) error {
 	if signature == nil {
 		return errors.ErrInvalidInput.WithMessage("signature is nil")
@@ -106,8 +107,7 @@ func (sm *SigningManager) VerifySignature(message interface{}, signature *Signat
 	return nil
 }
 
-// createSignatureBase creates the RFC 9421 signature base string.
-// This canonicalizes the message fields into a standardized format for signing.
+// createSignatureBase hashes the legacy JSON envelope without its signature.
 func (sm *SigningManager) createSignatureBase(message interface{}) (string, error) {
 	// For messages with a Signature field, we need to exclude it from the signature base
 	// Otherwise the signature would be signing itself, which is impossible
@@ -191,7 +191,7 @@ func (sm *SigningManager) ValidateTimestamp(timestamp time.Time, maxClockSkew ti
 
 // NonceCache provides replay protection by tracking used nonces.
 type NonceCache struct {
-	nonces map[string]time.Time
+	nonces  map[string]time.Time
 	maxSize int
 }
 
@@ -244,8 +244,8 @@ func (nc *NonceCache) cleanup() {
 	}
 }
 
-// SignMessageRFC9421 signs a message using RFC 9421 standard.
-// This is the preferred method for new code.
+// SignMessageRFC9421 signs the legacy core message format.
+// Its historical name does not imply HTTP signature conformance.
 func (sm *SigningManager) SignMessageRFC9421(
 	agentDID string,
 	messageID string,
@@ -294,8 +294,7 @@ func (sm *SigningManager) SignMessageRFC9421(
 	return message, nil
 }
 
-// VerifyMessageRFC9421 verifies a message signature using RFC 9421 standard.
-// This is the preferred method for new code.
+// VerifyMessageRFC9421 verifies the legacy core message format.
 func (sm *SigningManager) VerifyMessageRFC9421(
 	message *rfc9421.Message,
 	publicKey ed25519.PublicKey,

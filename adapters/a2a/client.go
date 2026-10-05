@@ -119,6 +119,7 @@ func convertMessageToA2A(msg *types.Message) a2aprotocol.Message {
 	}
 
 	return a2aprotocol.Message{
+		Kind:  a2aprotocol.KindMessage,
 		Role:  a2aprotocol.MessageRole(msg.Role),
 		Parts: parts,
 	}
@@ -191,6 +192,22 @@ func convertMessageFromA2A(msg *a2aprotocol.Message) *types.Message {
 
 // convertPartFromA2A converts an A2A part to a sage-adk part.
 func convertPartFromA2A(part a2aprotocol.Part) types.Part {
+	// The published protocol decoder produces pointers, while callers may
+	// construct parts by value. Preserve both forms before the legacy conversion.
+	switch p := part.(type) {
+	case *a2aprotocol.TextPart:
+		if p != nil {
+			part = *p
+		}
+	case *a2aprotocol.FilePart:
+		if p != nil {
+			part = *p
+		}
+	case *a2aprotocol.DataPart:
+		if p != nil {
+			part = *p
+		}
+	}
 	switch p := part.(type) {
 	case a2aprotocol.TextPart:
 		return types.NewTextPart(p.Text)

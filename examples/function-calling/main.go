@@ -58,7 +58,7 @@ func (cs *CalculatorService) Calculate(expression string) (float64, error) {
 }
 
 func main() {
-	fmt.Println("=== SAGE ADK Function Calling Example ===\n")
+	fmt.Print("=== SAGE ADK Function Calling Example ===\n\n")
 
 	// Initialize services
 	weatherService := &WeatherService{}
@@ -107,7 +107,7 @@ func main() {
 		ToolChoice: "auto",
 	}
 
-	fmt.Println("User: What's the weather like in Tokyo? Also, what is 15 * 23?\n")
+	fmt.Print("User: What's the weather like in Tokyo? Also, what is 15 * 23?\n\n")
 
 	// Call LLM
 	ctx := context.Background()

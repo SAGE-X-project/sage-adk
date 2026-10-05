@@ -28,7 +28,7 @@ import (
 	"github.com/sage-x-project/sage-adk/core/protocol"
 	"github.com/sage-x-project/sage-adk/pkg/errors"
 	"github.com/sage-x-project/sage-adk/storage"
-	sagecrypto "github.com/sage-x-project/sage/crypto"
+	sagecrypto "github.com/sage-x-project/sage/pkg/agent/crypto"
 )
 
 // Builder provides a fluent API for constructing AI agents.
@@ -86,6 +86,18 @@ func NewAgent(name string) *Builder {
 		config:       config.NewConfig(),
 		protocolMode: protocol.ProtocolA2A, // Default to A2A
 	}
+}
+
+// WithDescription sets the description in the agent configuration and card.
+func (b *Builder) WithDescription(description string) *Builder {
+	b.config.Agent.Description = description
+	return b
+}
+
+// WithVersion sets the agent version in its configuration and card.
+func (b *Builder) WithVersion(version string) *Builder {
+	b.config.Agent.Version = version
+	return b
 }
 
 // WithLLM sets the LLM provider for the agent.
@@ -450,6 +462,8 @@ func (b *Builder) buildAgent() (*agent.AgentImpl, error) {
 	// Create agent options
 	opts := &agent.Options{
 		Name:           b.name,
+		Description:    b.config.Agent.Description,
+		Version:        b.config.Agent.Version,
 		Config:         b.config,
 		ProtocolMode:   b.protocolMode,
 		A2AConfig:      b.a2aConfig,
@@ -487,7 +501,7 @@ func (b *Builder) createA2AServer() (agent.Server, error) {
 	serverConfig := &a2a.ServerConfig{
 		AgentName:      b.name,
 		AgentURL:       agentURL,
-		Description:    "", // TODO: Add description to builder
+		Description:    b.config.Agent.Description,
 		MessageHandler: b.messageHandler,
 	}
 

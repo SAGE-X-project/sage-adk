@@ -604,10 +604,10 @@ func TestSigningManager_RFC9421_WithHeaders(t *testing.T) {
 	publicKey, privateKey, _ := ed25519.GenerateKey(rand.Reader)
 
 	headers := map[string]string{
-		"content-type":   "application/json",
-		"x-request-id":   "req-456",
-		"x-correlation":  "corr-789",
-		"authorization":  "Bearer test-token",
+		"content-type":  "application/json",
+		"x-request-id":  "req-456",
+		"x-correlation": "corr-789",
+		"authorization": "Bearer test-token",
 	}
 
 	message, err := sm.SignMessageRFC9421(

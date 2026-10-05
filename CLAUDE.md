@@ -47,10 +47,10 @@ SAGE ADK is a Go framework for building secure, interoperable AI agents that sup
 - Ensure no bugs or errors
 
 ### 4. Commit Process
-- Create feature branch from `dev`
+- Create feature branch from `main`
 - Write commit message in English
-- Remove co-author metadata
-- Create PR to `dev` branch
+- Do not include emoji or co-author metadata
+- Create PR to `main` branch
 
 ## Project Structure
 
@@ -181,9 +181,9 @@ make check            # fmt + vet + lint + test
 Working on core types, errors, and configuration management.
 
 Reference implementations:
-- **sage/core/**: RFC 9421, message processing
-- **sage/crypto/**: Key management, storage
-- **sage/did/**: DID management, resolution
+- **sage/pkg/agent/core/**: RFC 9421, message processing
+- **sage/pkg/agent/crypto/**: Key management, storage
+- **sage/pkg/agent/did/**: DID management, resolution
 - **sage-a2a-go/protocol/**: A2A types (Message, Task, Agent)
 - **sage-a2a-go/taskmanager/**: Task lifecycle management
 
@@ -204,9 +204,9 @@ Reference implementations:
 ## Important Notes
 
 - All commit messages must be in English
-- Remove co-author metadata from commits
+- Do not include emoji or co-author metadata from commits
 - Always work in feature branches
-- Create PRs to `dev` branch, not `main`
+- Create PRs to `main`, squash merge, delete the branch and synchronize local `main`
 - Update design documents and checklists as work progresses
 - Test coverage must be ≥90%
 - Run full test suite before committing

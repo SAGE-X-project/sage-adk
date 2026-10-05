@@ -161,7 +161,7 @@ func main() {
 	fmt.Println("  http://localhost:9090/health/ready   - Readiness probe")
 	fmt.Println("  http://localhost:9090/health/startup - Startup probe")
 	fmt.Println("\nPress Ctrl+C to stop")
-	fmt.Println("========================================\n")
+	fmt.Print("========================================\n\n")
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)

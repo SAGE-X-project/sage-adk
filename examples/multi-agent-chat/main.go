@@ -30,10 +30,11 @@ Architecture:
 ┌──────────┐      ┌─────────────┐      ┌──────────────┐
 │  Client  │─────>│ Coordinator │─────>│ Specialist   │
 └──────────┘      │   Agent     │      │   Agents     │
-                  └─────────────┘      └──────────────┘
-                         │                    │
-                         └────────────────────┘
-                          Collaboration Flow
+
+	└─────────────┘      └──────────────┘
+	       │                    │
+	       └────────────────────┘
+	        Collaboration Flow
 */
 package main
 
@@ -186,7 +187,7 @@ func startCoordinatorAgent(ctx context.Context, store storage.Storage) *agent.Ag
 		log.Fatalf("Failed to create coordinator: %v", err)
 	}
 
-	impl := agentInstance.(*agent.AgentImpl)
+	impl := agentInstance
 	go impl.Start(coordinatorPort)
 
 	return impl
@@ -253,7 +254,7 @@ func createSpecialistAgent(name, description string, handler agent.MessageHandle
 		log.Fatalf("Failed to create %s: %v", name, err)
 	}
 
-	impl := agentInstance.(*agent.AgentImpl)
+	impl := agentInstance
 	go impl.Start(port)
 
 	return impl

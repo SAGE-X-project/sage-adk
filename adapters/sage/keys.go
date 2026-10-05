@@ -22,41 +22,54 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sage-x-project/sage/crypto"
+	"github.com/sage-x-project/sage/pkg/agent/crypto"
+	"github.com/sage-x-project/sage/pkg/agent/crypto/formats"
+	"github.com/sage-x-project/sage/pkg/agent/crypto/keys"
+	"github.com/sage-x-project/sage/pkg/agent/crypto/storage"
 )
 
-// KeyManager provides a wrapper around sage crypto.Manager for key management.
-// It simplifies key operations for sage-adk users while using the full
-// functionality of the sage crypto library.
+// KeyManager composes the public SAGE key, format, and storage APIs.
 type KeyManager struct {
-	manager *crypto.Manager
+	storage crypto.KeyStorage
 }
 
 // NewKeyManager creates a new key manager using sage crypto library.
 func NewKeyManager() *KeyManager {
 	return &KeyManager{
-		manager: crypto.NewManager(),
+		storage: storage.NewMemoryKeyStorage(),
 	}
 }
 
 // NewKeyManagerWithStorage creates a new key manager with custom storage backend.
 func NewKeyManagerWithStorage(storage crypto.KeyStorage) *KeyManager {
-	manager := crypto.NewManager()
-	manager.SetStorage(storage)
+	if storage == nil {
+		return NewKeyManager()
+	}
 	return &KeyManager{
-		manager: manager,
+		storage: storage,
 	}
 }
 
 // Generate creates a new Ed25519 key pair using sage crypto library.
 // Ed25519 is the default key type for SAGE agents.
 func (km *KeyManager) Generate() (crypto.KeyPair, error) {
-	return km.manager.GenerateKeyPair(crypto.KeyTypeEd25519)
+	return km.GenerateWithType(crypto.KeyTypeEd25519)
 }
 
 // GenerateWithType creates a new key pair of the specified type.
 func (km *KeyManager) GenerateWithType(keyType crypto.KeyType) (crypto.KeyPair, error) {
-	return km.manager.GenerateKeyPair(keyType)
+	switch keyType {
+	case crypto.KeyTypeEd25519:
+		return keys.GenerateEd25519KeyPair()
+	case crypto.KeyTypeSecp256k1:
+		return keys.GenerateSecp256k1KeyPair()
+	case crypto.KeyTypeP256:
+		return keys.GenerateP256KeyPair()
+	case crypto.KeyTypeX25519:
+		return keys.GenerateX25519KeyPair()
+	default:
+		return nil, crypto.ErrInvalidKeyType
+	}
 }
 
 // LoadFromFile loads a key pair from a file using sage crypto formats.
@@ -68,13 +81,13 @@ func (km *KeyManager) LoadFromFile(path string) (crypto.KeyPair, error) {
 	}
 
 	// Try PEM format first (more common for private keys)
-	keyPair, err := km.manager.ImportKeyPair(data, crypto.KeyFormatPEM)
+	keyPair, err := km.ImportKeyPair(data, crypto.KeyFormatPEM)
 	if err == nil {
 		return keyPair, nil
 	}
 
 	// Try JWK format
-	keyPair, err = km.manager.ImportKeyPair(data, crypto.KeyFormatJWK)
+	keyPair, err = km.ImportKeyPair(data, crypto.KeyFormatJWK)
 	if err != nil {
 		return nil, fmt.Errorf("failed to import key (tried PEM and JWK formats): %w", err)
 	}
@@ -89,7 +102,7 @@ func (km *KeyManager) LoadFromFileWithFormat(path string, format crypto.KeyForma
 		return nil, fmt.Errorf("failed to read key file: %w", err)
 	}
 
-	keyPair, err := km.manager.ImportKeyPair(data, format)
+	keyPair, err := km.ImportKeyPair(data, format)
 	if err != nil {
 		return nil, fmt.Errorf("failed to import key: %w", err)
 	}
@@ -105,7 +118,7 @@ func (km *KeyManager) SaveToFile(keyPair crypto.KeyPair, path string) error {
 
 // SaveToFileWithFormat saves a key pair to a file with explicit format.
 func (km *KeyManager) SaveToFileWithFormat(keyPair crypto.KeyPair, path string, format crypto.KeyFormat) error {
-	data, err := km.manager.ExportKeyPair(keyPair, format)
+	data, err := km.ExportKeyPair(keyPair, format)
 	if err != nil {
 		return fmt.Errorf("failed to export key: %w", err)
 	}
@@ -120,22 +133,22 @@ func (km *KeyManager) SaveToFileWithFormat(keyPair crypto.KeyPair, path string, 
 
 // Store stores a key pair in the manager's storage backend.
 func (km *KeyManager) Store(keyPair crypto.KeyPair) error {
-	return km.manager.StoreKeyPair(keyPair)
+	return km.storage.Store(keyPair.ID(), keyPair)
 }
 
 // Load loads a key pair by ID from the manager's storage backend.
 func (km *KeyManager) Load(id string) (crypto.KeyPair, error) {
-	return km.manager.LoadKeyPair(id)
+	return km.storage.Load(id)
 }
 
 // Delete deletes a key pair by ID from the manager's storage backend.
 func (km *KeyManager) Delete(id string) error {
-	return km.manager.DeleteKeyPair(id)
+	return km.storage.Delete(id)
 }
 
 // List lists all stored key pair IDs.
 func (km *KeyManager) List() ([]string, error) {
-	return km.manager.ListKeyPairs()
+	return km.storage.List()
 }
 
 // ExtractEd25519PrivateKey extracts the Ed25519 private key from a KeyPair.
@@ -169,7 +182,30 @@ func (km *KeyManager) ExtractEd25519PublicKey(keyPair crypto.KeyPair) (ed25519.P
 	return ed25519Key, nil
 }
 
-// Manager returns the underlying sage crypto.Manager for advanced operations.
-func (km *KeyManager) Manager() *crypto.Manager {
-	return km.manager
+// Manager returns the ADK key operations facade.
+// Deprecated: use the KeyManager methods directly. SAGE no longer exports crypto.Manager.
+func (km *KeyManager) Manager() *KeyManager { return km }
+
+// ImportKeyPair imports a key using a public SAGE format implementation.
+func (km *KeyManager) ImportKeyPair(data []byte, format crypto.KeyFormat) (crypto.KeyPair, error) {
+	switch format {
+	case crypto.KeyFormatPEM:
+		return formats.NewPEMImporter().Import(data, format)
+	case crypto.KeyFormatJWK:
+		return formats.NewJWKImporter().Import(data, format)
+	default:
+		return nil, crypto.ErrInvalidKeyFormat
+	}
+}
+
+// ExportKeyPair exports a key using a public SAGE format implementation.
+func (km *KeyManager) ExportKeyPair(key crypto.KeyPair, format crypto.KeyFormat) ([]byte, error) {
+	switch format {
+	case crypto.KeyFormatPEM:
+		return formats.NewPEMExporter().Export(key, format)
+	case crypto.KeyFormatJWK:
+		return formats.NewJWKExporter().Export(key, format)
+	default:
+		return nil, crypto.ErrInvalidKeyFormat
+	}
 }

@@ -19,11 +19,12 @@ package sage
 
 import (
 	"crypto/ed25519"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/sage-x-project/sage/crypto"
+	"github.com/sage-x-project/sage/pkg/agent/crypto"
 )
 
 func TestKeyManager_Generate(t *testing.T) {
@@ -57,6 +58,9 @@ func TestKeyManager_GenerateWithType(t *testing.T) {
 	}{
 		{"Ed25519", crypto.KeyTypeEd25519, false},
 		{"Secp256k1", crypto.KeyTypeSecp256k1, false},
+		{"P256", crypto.KeyTypeP256, false},
+		{"X25519", crypto.KeyTypeX25519, false},
+		{"unknown", crypto.KeyType("unknown"), true},
 	}
 
 	for _, tt := range tests {
@@ -364,5 +368,36 @@ func TestKeyManager_RoundTrip(t *testing.T) {
 
 	if string(originalPub) != string(loadedPub) {
 		t.Error("Round-trip: public keys do not match")
+	}
+}
+
+func TestKeyManagerStorageIsolation(t *testing.T) {
+	first, second := NewKeyManager(), NewKeyManagerWithStorage(nil)
+	key, err := first.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Store(key); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := second.Load(key.ID()); !errors.Is(err, crypto.ErrKeyNotFound) {
+		t.Fatalf("independent manager unexpectedly shares storage: %v", err)
+	}
+	if first.Manager() != first {
+		t.Fatal("manager facade must retain storage ownership")
+	}
+}
+
+func TestKeyManagerRejectsUnsupportedFormat(t *testing.T) {
+	km := NewKeyManager()
+	if _, err := km.ImportKeyPair([]byte("fixture"), crypto.KeyFormat("unknown")); !errors.Is(err, crypto.ErrInvalidKeyFormat) {
+		t.Fatal(err)
+	}
+	key, err := km.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := km.ExportKeyPair(key, crypto.KeyFormat("unknown")); !errors.Is(err, crypto.ErrInvalidKeyFormat) {
+		t.Fatal(err)
 	}
 }

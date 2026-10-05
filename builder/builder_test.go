@@ -485,3 +485,13 @@ func TestBuilder_Idempotent(t *testing.T) {
 		t.Error("Multiple builds produced different agents")
 	}
 }
+
+func TestBuilderDescription(t *testing.T) {
+	ag, err := NewAgent("metadata").WithDescription("public consumer").WithVersion("test-version").Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ag.Description() != "public consumer" || ag.Card().Description != "public consumer" || ag.Card().Version != "test-version" {
+		t.Fatal("description was not retained in the agent card")
+	}
+}

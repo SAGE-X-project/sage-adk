@@ -23,14 +23,14 @@ fi
 # Check if protoc-gen-go is installed
 if ! command -v protoc-gen-go &> /dev/null; then
     echo "Error: protoc-gen-go is not installed"
-    echo "Install with: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest"
+    echo "Install with: go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11"
     exit 1
 fi
 
 # Check if protoc-gen-go-grpc is installed
 if ! command -v protoc-gen-go-grpc &> /dev/null; then
     echo "Error: protoc-gen-go-grpc is not installed"
-    echo "Install with: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest"
+    echo "Install with: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1"
     exit 1
 fi
 
@@ -45,5 +45,5 @@ protoc \
     --go-grpc_opt=paths=source_relative \
     "${PROTO_DIR}/agent.proto"
 
-echo "✅ gRPC code generation complete!"
+echo "gRPC code generation complete!"
 echo "   Output: ${OUT_DIR}"

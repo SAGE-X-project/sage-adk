@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	sageconfig "github.com/sage-x-project/sage/config"
-	"github.com/sage-x-project/sage/did"
+	sageconfig "github.com/sage-x-project/sage-adk/adapters/sage/configmodel"
 	adkconfig "github.com/sage-x-project/sage-adk/config"
+	"github.com/sage-x-project/sage/pkg/agent/did"
 )
 
 // mockResolver implements did.Resolver interface for testing
@@ -548,8 +548,8 @@ func TestDIDResolver_IsActive(t *testing.T) {
 		wantActive bool
 	}{
 		{
-			name: "active agent",
-			did:  "did:sage:ethereum:0x123",
+			name:       "active agent",
+			did:        "did:sage:ethereum:0x123",
 			mockActive: true,
 			mockError:  nil,
 			wantErr:    false,

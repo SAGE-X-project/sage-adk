@@ -22,14 +22,16 @@ import (
 type GRPCClient struct {
 	conn   *grpc.ClientConn
 	client pb.AgentServiceClient
-	config ClientConfig
+	config *Client
 }
 
-// NewGRPCClient creates a new gRPC client
-func NewGRPCClient(target string, opts ...ClientOption) (*GRPCClient, error) {
-	config := DefaultClientConfig()
+// NewGRPCClient creates a legacy plaintext gRPC client.
+// WithTimeout and WithRetry apply; HTTP-specific options have no gRPC effect.
+// This transport is not the protected SAGE 0.10.0 binding.
+func NewGRPCClient(target string, opts ...Option) (*GRPCClient, error) {
+	config := &Client{timeout: 30 * time.Second, maxRetries: 3, initialDelay: 100 * time.Millisecond, maxDelay: 5 * time.Second}
 	for _, opt := range opts {
-		opt(&config)
+		opt(config)
 	}
 
 	// Set up gRPC connection options
@@ -41,8 +43,8 @@ func NewGRPCClient(target string, opts ...ClientOption) (*GRPCClient, error) {
 			PermitWithoutStream: true,
 		}),
 		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(4 * 1024 * 1024),
-			grpc.MaxCallSendMsgSize(4 * 1024 * 1024),
+			grpc.MaxCallRecvMsgSize(4*1024*1024),
+			grpc.MaxCallSendMsgSize(4*1024*1024),
 		),
 	}
 
@@ -62,9 +64,9 @@ func NewGRPCClient(target string, opts ...ClientOption) (*GRPCClient, error) {
 // SendMessage sends a message via gRPC
 func (c *GRPCClient) SendMessage(ctx context.Context, message *types.Message) (*types.Message, error) {
 	// Apply timeout
-	if c.config.Timeout > 0 {
+	if c.config.timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, c.config.Timeout)
+		ctx, cancel = context.WithTimeout(ctx, c.config.timeout)
 		defer cancel()
 	}
 
@@ -77,7 +79,7 @@ func (c *GRPCClient) SendMessage(ctx context.Context, message *types.Message) (*
 	// Send request
 	req := &pb.SendMessageRequest{
 		Message:        pbMsg,
-		TimeoutSeconds: int32(c.config.Timeout.Seconds()),
+		TimeoutSeconds: int32(c.config.timeout.Seconds()),
 	}
 
 	// Execute with retry
@@ -118,14 +120,14 @@ func (c *GRPCClient) Close() error {
 
 // executeWithRetry executes a function with retry logic
 func (c *GRPCClient) executeWithRetry(ctx context.Context, fn func() error) error {
-	if c.config.MaxRetries == 0 {
+	if c.config.maxRetries == 0 {
 		return fn()
 	}
 
 	var lastErr error
-	backoff := c.config.RetryInitialBackoff
+	backoff := c.config.initialDelay
 
-	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
+	for attempt := 0; attempt <= c.config.maxRetries; attempt++ {
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
@@ -135,8 +137,8 @@ func (c *GRPCClient) executeWithRetry(ctx context.Context, fn func() error) erro
 
 			// Exponential backoff with jitter
 			backoff = time.Duration(float64(backoff) * 2.0)
-			if backoff > c.config.RetryMaxBackoff {
-				backoff = c.config.RetryMaxBackoff
+			if backoff > c.config.maxDelay {
+				backoff = c.config.maxDelay
 			}
 		}
 

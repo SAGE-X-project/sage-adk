@@ -223,3 +223,7 @@ info: ## Show project info
 	@echo "Go Version:  $(shell $(GO) version)"
 	@echo "Build Dir:   $(BUILD_DIR)"
 	@echo "Binary Name: $(BINARY_NAME)"
+
+.PHONY: test-consumer
+test-consumer: ## Check public library use from a separate Go module
+	cd verification/library-consumer && $(GO) test -mod=readonly -race -timeout 1m ./...

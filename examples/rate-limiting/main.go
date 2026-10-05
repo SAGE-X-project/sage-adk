@@ -14,6 +14,7 @@ Features:
   - Custom rate limit handlers
 
 Run:
+
 	go run main.go
 */
 package main
@@ -29,7 +30,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SAGE ADK Rate Limiting Example ===\n")
+	fmt.Print("=== SAGE ADK Rate Limiting Example ===\n\n")
 
 	// Run examples
 	tokenBucketExample()
@@ -140,7 +141,7 @@ func middlewareExample() {
 	// Create handler
 	handler := func(ctx context.Context, msg *types.Message) (*types.Message, error) {
 		return types.NewMessage(
-			types.MessageRoleAssistant,
+			types.MessageRoleAgent,
 			[]types.Part{types.NewTextPart("Response: " + msg.Parts[0].(*types.TextPart).Text)},
 		), nil
 	}
@@ -179,8 +180,8 @@ func burstHandlingExample() {
 	fmt.Println()
 
 	limiter := ratelimit.NewTokenBucket(ratelimit.TokenBucketConfig{
-		Rate:     2.0,  // 2 tokens per second
-		Capacity: 10,   // Can handle burst of 10
+		Rate:     2.0, // 2 tokens per second
+		Capacity: 10,  // Can handle burst of 10
 	})
 	defer limiter.Close()
 

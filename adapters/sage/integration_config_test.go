@@ -23,7 +23,7 @@ import (
 	"time"
 
 	adkconfig "github.com/sage-x-project/sage-adk/config"
-	"github.com/sage-x-project/sage/crypto"
+	"github.com/sage-x-project/sage/pkg/agent/crypto"
 )
 
 // TestIntegration_ConfigToTransport tests the full integration from ADK config to TransportManager.
