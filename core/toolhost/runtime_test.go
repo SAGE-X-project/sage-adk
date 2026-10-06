@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sage-x-project/sage-adk/core/capture"
+	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	"github.com/sage-x-project/sage-adk/core/toolhost"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 )
@@ -54,7 +55,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	clientIntent, clientResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
 	serverIntent, serverResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
 	hostServices := func(intent, result *g.RegistryAuthority, p *fixturePolicy) toolhost.Services {
-		return toolhost.Services{IntentAuthority: intent, ResultAuthority: result, Policy: p, Signer: fixtureResultSigner{env}, Clock: env.clock}
+		return toolhost.Services{IntentAuthority: intent, ResultAuthority: result, Policy: p, Signer: env.resultSigner(t, result), Clock: env.clock}
 	}
 	serverPath := filepath.Join(env.root, "server-ledger")
 	server, err := toolhost.Open(serverPath, true, fixtureBob, hostServices(serverIntent, serverResult, serverPolicy), bindings, fixtureBounds())
@@ -80,7 +81,11 @@ func runNativeFixture(t *testing.T, mode string) {
 	env.clock.mono.Add(360000)
 	journal := filepath.Join(env.root, "client-journal")
 	signer := &fixtureIntentSigner{env: env, path: journal}
-	issuer, err := request.NewIntentIssuer(context.Background(), g.IssuerServices{Client: g.ClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: policy, Clock: env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureAlice, ExpectedRecipient: fixtureBob}, Policy: policy, Signer: signer, Measurement: loaded, KeyID: fixtureAlice + "#signing-1"})
+	protectedSigner, err := p.NewIntentSigner(context.Background(), clientIntent, fixtureAlice, fixtureAlice+"#signing-1", signer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	issuer, err := request.NewIntentIssuer(context.Background(), g.IssuerServices{Client: g.ClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: policy, Clock: env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureAlice, ExpectedRecipient: fixtureBob}, Policy: policy, Signer: protectedSigner, Measurement: loaded, KeyID: fixtureAlice + "#signing-1"})
 	if err != nil {
 		t.Fatal(err)
 	}

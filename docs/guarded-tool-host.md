@@ -30,6 +30,10 @@ err = host.Serve(ctx, listener, workers, connectionConfig, handler)
 closeErr := host.Close(cleanupCtx)
 ```
 
+See [clock and signing bindings](guard-provider-bindings.md) for shared local
+clock and registry-bound custody adapters. Actual Source/custody remain protected
+deployment providers.
+
 All providers and bounds are mandatory; no permissive policy or signing default
 is supplied. Use `Connect` for one owned outgoing connection, `Serve` for bounded
 incoming connections, and `Close` to retire admission and await workers/provider
