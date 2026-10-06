@@ -56,8 +56,16 @@ do not isolate code running as the same user. Protect storage and checkpoints
 against untrusted writers and rollback. Stored original inputs are plaintext;
 access and retention must account for sensitive request contents.
 
+Use the [guarded tool host](guarded-tool-host.md) for explicit native MCP effect
+admission. Its authenticated connection can reopen the already issued Client
+through `request.OpenMCPClient(ctx, connection, journalPath, signedIntent, services)`.
+First close the issued Client successfully, keep the same protected path and fence,
+and serialize ownership in the host. Reopening never creates missing history and
+does not re-sign. The original is reloaded here and by the bound Client policy
+before later handoffs. This close-and-reopen transfer is not atomic across processes.
+
 This is an explicit original-input boundary, not a fully protected agent host.
 Ordinary Process, transport servers, direct LLM calls and tools do not
-implicitly enter it. Final effect mediation, deployment controls and Inspector
-runtime evidence remain subsequent work. The historical readiness evidence is
+implicitly enter it. Effects outside that explicit native host, deployment controls and Inspector
+runtime evidence still require binding. The historical readiness evidence is
 not upgraded by these local tests.

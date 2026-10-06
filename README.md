@@ -373,8 +373,9 @@ A2A fork is separate work. Generated bindings for `proto/agent.proto` are includ
 This restores build compatibility. The legacy signing/transport helpers do not
 establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
 and issuer binding are available through explicit host APIs described in the
-[original capture guide](docs/original-request-capture.md). Current authority
-providers, final tool execution admission and deployed evidence still need binding.
+[original capture guide](docs/original-request-capture.md). The [guarded tool host](docs/guarded-tool-host.md) adds explicit native MCP
+execution admission for pinned instances. Actual provider/effect bindings and
+deployed Inspector evidence remain required.
 
 ## Development
 
@@ -476,8 +477,9 @@ A2A fork is separate work. Generated bindings for `proto/agent.proto` are includ
 This restores build compatibility. The legacy signing/transport helpers do not
 establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
 and issuer binding are available through explicit host APIs described in the
-[original capture guide](docs/original-request-capture.md). Current authority
-providers, final tool execution admission and deployed evidence still need binding.
+[original capture guide](docs/original-request-capture.md). The [guarded tool host](docs/guarded-tool-host.md) adds explicit native MCP
+execution admission for pinned instances. Actual provider/effect bindings and
+deployed Inspector evidence remain required.
 
 ## Development
 - Go 1.26.0+
