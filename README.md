@@ -371,8 +371,10 @@ The existing A2A adapter retains published tRPC v0.2.2; adopting the newer SAGE
 A2A fork is separate work. Generated bindings for `proto/agent.proto` are included.
 
 This restores build compatibility. The legacy signing/transport helpers do not
-establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Guard capture,
-current authority providers and final tool execution admission still need binding.
+establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
+and issuer binding are available through explicit host APIs described in the
+[original capture guide](docs/original-request-capture.md). Current authority
+providers, final tool execution admission and deployed evidence still need binding.
 
 ## Development
 
@@ -472,8 +474,10 @@ The existing A2A adapter retains published tRPC v0.2.2; adopting the newer SAGE
 A2A fork is separate work. Generated bindings for `proto/agent.proto` are included.
 
 This restores build compatibility. The legacy signing/transport helpers do not
-establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Guard capture,
-current authority providers and final tool execution admission still need binding.
+establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
+and issuer binding are available through explicit host APIs described in the
+[original capture guide](docs/original-request-capture.md). Current authority
+providers, final tool execution admission and deployed evidence still need binding.
 
 ## Development
 - Go 1.26.0+
