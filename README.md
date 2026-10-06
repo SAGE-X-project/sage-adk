@@ -374,7 +374,8 @@ This restores build compatibility. The legacy signing/transport helpers do not
 establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
 and issuer binding are available through explicit host APIs described in the
 [original capture guide](docs/original-request-capture.md). The [guarded tool host](docs/guarded-tool-host.md) adds explicit native MCP
-execution admission for pinned instances. Actual provider/effect bindings and
+execution admission for pinned instances. [Clock and signing adapters](docs/guard-provider-bindings.md)
+bind common time and protected Ed25519 custody to current Registry authority. Actual provider/effect bindings and
 deployed Inspector evidence remain required.
 
 ## Development
@@ -478,7 +479,8 @@ This restores build compatibility. The legacy signing/transport helpers do not
 establish SAGE 0.10.0 protection or RFC 9421 HTTP conformance. Original capture
 and issuer binding are available through explicit host APIs described in the
 [original capture guide](docs/original-request-capture.md). The [guarded tool host](docs/guarded-tool-host.md) adds explicit native MCP
-execution admission for pinned instances. Actual provider/effect bindings and
+execution admission for pinned instances. [Clock and signing adapters](docs/guard-provider-bindings.md)
+bind common time and protected Ed25519 custody to current Registry authority. Actual provider/effect bindings and
 deployed Inspector evidence remain required.
 
 ## Development

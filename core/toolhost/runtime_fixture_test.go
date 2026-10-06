@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 	h "github.com/sage-x-project/sage/pkg/agent/hpke"
 	r "github.com/sage-x-project/sage/pkg/agent/registry010"
@@ -236,26 +237,27 @@ func (l *fixtureLoadedTool) Execute(ctx context.Context, args []byte) ([]byte, e
 	return []byte(`{ "sum": 5 }`), nil
 }
 
-type fixtureResultSigner struct{ env *fixtureEnvironment }
+type fixtureResultBackend struct{ env *fixtureEnvironment }
 
-func (s fixtureResultSigner) Now(context.Context) (int64, error) {
-	stamp, err := s.env.clock.Now()
-	return stamp.Unix, err
-}
-func (s fixtureResultSigner) ActiveKey(_ context.Context, did, kid string) (ed25519.PublicKey, error) {
-	if did != fixtureBob || kid != fixtureBob+"#signing-1" {
+func (s fixtureResultBackend) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
+	if ctx.Err() != nil {
 		return nil, g.ErrInvalid
 	}
 	return s.env.bob.Public().(ed25519.PublicKey), nil
 }
-func (fixtureResultSigner) KeyID(context.Context) (string, error) {
-	return fixtureBob + "#signing-1", nil
-}
-func (s fixtureResultSigner) Sign(ctx context.Context, kid string, b []byte) ([]byte, error) {
-	if ctx.Err() != nil || kid != fixtureBob+"#signing-1" {
+func (s fixtureResultBackend) Sign(ctx context.Context, b []byte) ([]byte, error) {
+	if ctx.Err() != nil {
 		return nil, g.ErrInvalid
 	}
 	return ed25519.Sign(s.env.bob, b), nil
+}
+func (e *fixtureEnvironment) resultSigner(t *testing.T, a *g.RegistryAuthority) *p.ResultSigner {
+	t.Helper()
+	signer, err := p.NewResultSigner(context.Background(), a, fixtureBob, fixtureBob+"#signing-1", fixtureResultBackend{e})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return signer
 }
 
 type fixtureIntentSigner struct {
@@ -264,9 +266,16 @@ type fixtureIntentSigner struct {
 	calls atomic.Int64
 }
 
-func (s *fixtureIntentSigner) Sign(_ context.Context, kid string, b []byte) ([]byte, error) {
+func (s *fixtureIntentSigner) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
+	if ctx.Err() != nil {
+		return nil, g.ErrInvalid
+	}
+	return s.env.alice.Public().(ed25519.PublicKey), nil
+}
+
+func (s *fixtureIntentSigner) Sign(ctx context.Context, b []byte) ([]byte, error) {
 	const domain = "sage-execution-intent|0.10.0\x00"
-	if kid != fixtureAlice+"#signing-1" || !bytes.HasPrefix(b, []byte(domain)) {
+	if ctx.Err() != nil || !bytes.HasPrefix(b, []byte(domain)) {
 		return nil, g.ErrInvalid
 	}
 	fence, err := os.ReadFile(s.path + ".issuance")

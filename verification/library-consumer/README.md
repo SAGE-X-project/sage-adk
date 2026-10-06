@@ -19,7 +19,10 @@ capture, issuance, same-journal transfer, encrypted loopback setup, one inert su
 effect, signed verified delivery and ledger recovery.
 `toolhost_fixture_test.go` and `toolhost_runtime_test.go` mirror the root positive
 fixture except for the package name. They check public packaging compatibility,
-not an independent protocol oracle. Root unit scenarios cover denials, including terminal handoff refusal and its
+not an independent protocol oracle. Both intent and result key use now run through public Registry-bound signing
+adapters; fixture observations and ephemeral custody remain explicit. The public
+shared-clock check exercises both clock interfaces and concurrent samples.
+Root unit scenarios cover denials, including terminal handoff refusal and its
 required connection retirement.
 
 These are local fixtures. They do not verify effect routes outside the explicit
