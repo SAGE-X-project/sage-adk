@@ -34,6 +34,10 @@ See [clock and signing bindings](guard-provider-bindings.md) for shared local
 clock and registry-bound custody adapters. Actual Source/custody remain protected
 deployment providers.
 
+See [approved operation bindings](approved-operation-bindings.md) for a fixed
+policy evaluator and exact artifact snapshots connected to the same instance.
+Its Factory still supplies actual loaded-code attestation and remains protected.
+
 All providers and bounds are mandatory; no permissive policy or signing default
 is supplied. Use `Connect` for one owned outgoing connection, `Serve` for bounded
 incoming connections, and `Close` to retire admission and await workers/provider

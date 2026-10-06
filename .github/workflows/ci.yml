@@ -43,6 +43,10 @@ jobs:
           go vet -mod=readonly ./...
       - name: Unit and safe loopback tests
         run: go test -mod=readonly -race -timeout 10m ./...
+      - name: Approved operation policy coverage
+        run: |
+          go test -mod=readonly -race -coverprofile="$RUNNER_TEMP/approved-operation.cover" ./core/guardbinding
+          go tool cover -func="$RUNNER_TEMP/approved-operation.cover" | awk '/^total:/ { sub(/%$/, "", $3); found=1; if ($3+0 < 90) exit 1 } END { if (!found) exit 1 }'
       - name: External library consumer
         working-directory: verification/library-consumer
         run: |
@@ -53,3 +57,18 @@ jobs:
         run: |
           go build -mod=readonly -o "$RUNNER_TEMP/sage-adk" ./cmd/adk
           "$RUNNER_TEMP/sage-adk" version
+
+  approved-operation-lint:
+    name: Approved operation lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.8'
+          cache: true
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+          args: ./core/guardbinding

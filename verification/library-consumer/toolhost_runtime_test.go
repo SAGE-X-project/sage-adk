@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sage-x-project/sage-adk/core/capture"
+	b "github.com/sage-x-project/sage-adk/core/guardbinding"
 	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	"github.com/sage-x-project/sage-adk/core/toolhost"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
@@ -20,7 +21,8 @@ import (
 
 // Only private files, loopback, ephemeral keys and inert arithmetic are used.
 // Fixture registry/measurement services are not deployment attestation.
-func TestNativeGuardedToolRuntime(t *testing.T) { runNativeFixture(t, "allowed") }
+func TestNativeGuardedToolRuntime(t *testing.T)       { runNativeFixture(t, "allowed") }
+func TestApprovedOperationNativeRuntime(t *testing.T) { runNativeFixture(t, "approved-binding") }
 func runNativeFixture(t *testing.T, mode string) {
 	t.Helper()
 	env := newFixtureEnvironment(t)
@@ -29,7 +31,11 @@ func runNativeFixture(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer store.Close()
+	defer func() {
+		if e := store.Close(); e != nil {
+			t.Error(e)
+		}
+	}()
 	capturer, err := capture.NewHost(store)
 	if err != nil {
 		t.Fatal(err)
@@ -52,17 +58,57 @@ func runNativeFixture(t *testing.T, mode string) {
 		t.Fatal(err)
 	}
 	bindings := []toolhost.Binding{{Name: "sum", ManifestDigest: manifest, Tool: loaded}}
+	var clientPolicy g.IssuancePolicy = policy
+	var receiverPolicy g.IntentPolicy = serverPolicy
+	var measurement g.IntentMeasurement = loaded
+	if mode == "approved-binding" {
+		directory := filepath.Join(env.root, "approved-artifacts")
+		if err = os.Mkdir(directory, 0700); err != nil {
+			t.Fatal(err)
+		}
+		rule := fixtureJSON(map[string]any{"version": "0.10.0", "recipient": fixtureBob, "keyid": fixtureAlice + "#signing-1", "tool": "sum", "arguments": map[string]int{"a": 2, "b": 3}, "max_lifetime": 300})
+		artifacts := map[string][]byte{"arithmetic.fixture": []byte(fixtureMaterial), "evaluator.fixture": []byte("inert evaluator fixture"), "rules.json": rule}
+		for path, data := range artifacts {
+			if err = os.WriteFile(filepath.Join(directory, path), data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		policyArtifacts := fixtureJSON(map[string]any{"version": "0.10.0", "files": []any{map[string]any{"path": "evaluator.fixture", "sha256": fixtureHash(artifacts["evaluator.fixture"])}, map[string]any{"path": "rules.json", "sha256": fixtureHash(rule)}}})
+		descriptor := fixtureJSON(map[string]any{"version": "0.10.0", "issuer": fixtureAlice, "epoch": "00000000-0000-4000-8000-000000000001", "engine": b.Engine, "artifacts": json.RawMessage(policyArtifacts)})
+		open := func(instance *fixtureLoadedTool) *b.Operation {
+			operation, e := b.Open(context.Background(), request, b.Config{Directory: directory, Policy: descriptor, Manifest: fixtureManifest(), Limits: b.Limits{FileBytes: 1024, TotalBytes: 4096}, Factory: &fixtureOperationFactory{instance: instance}})
+			if e != nil {
+				t.Fatal(e)
+			}
+			t.Cleanup(func() {
+				if e := operation.Close(context.Background()); e != nil {
+					t.Error(e)
+				}
+			})
+			return operation
+		}
+		// Separate local issuer and receiver bindings; loaded-instance and Registry
+		// attestation are explicitly inert fixture providers, not deployment evidence.
+		issuerOperation := open(&fixtureLoadedTool{})
+		receiverOperation := open(loaded)
+		clientPolicy, receiverPolicy, measurement = issuerOperation, receiverOperation, issuerOperation
+		binding, e := receiverOperation.Binding(context.Background())
+		if e != nil {
+			t.Fatal(e)
+		}
+		bindings = []toolhost.Binding{binding}
+	}
 	clientIntent, clientResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
 	serverIntent, serverResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
-	hostServices := func(intent, result *g.RegistryAuthority, p *fixturePolicy) toolhost.Services {
+	hostServices := func(intent, result *g.RegistryAuthority, p g.IntentPolicy) toolhost.Services {
 		return toolhost.Services{IntentAuthority: intent, ResultAuthority: result, Policy: p, Signer: env.resultSigner(t, result), Clock: env.clock}
 	}
 	serverPath := filepath.Join(env.root, "server-ledger")
-	server, err := toolhost.Open(serverPath, true, fixtureBob, hostServices(serverIntent, serverResult, serverPolicy), bindings, fixtureBounds())
+	server, err := toolhost.Open(serverPath, true, fixtureBob, hostServices(serverIntent, serverResult, receiverPolicy), bindings, fixtureBounds())
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := toolhost.Open(filepath.Join(env.root, "client-ledger"), true, fixtureBob, hostServices(clientIntent, clientResult, policy), bindings, fixtureBounds())
+	client, err := toolhost.Open(filepath.Join(env.root, "client-ledger"), true, fixtureBob, hostServices(clientIntent, clientResult, clientPolicy), bindings, fixtureBounds())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,11 +131,15 @@ func runNativeFixture(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issuer, err := request.NewIntentIssuer(context.Background(), g.IssuerServices{Client: g.ClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: policy, Clock: env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureAlice, ExpectedRecipient: fixtureBob}, Policy: policy, Signer: protectedSigner, Measurement: loaded, KeyID: fixtureAlice + "#signing-1"})
+	issuer, err := request.NewIntentIssuer(context.Background(), g.IssuerServices{Client: g.ClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: clientPolicy, Clock: env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureAlice, ExpectedRecipient: fixtureBob}, Policy: clientPolicy, Signer: protectedSigner, Measurement: measurement, KeyID: fixtureAlice + "#signing-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer issuer.Retire()
+	defer func() {
+		if e := issuer.Retire(); e != nil {
+			t.Error(e)
+		}
+	}()
 	approved, err := issuer.Authorize(context.Background(), g.IntentProposal{Tool: "sum", Arguments: []byte(`{"a":2,"b":3}`), LifetimeSeconds: 300})
 	if err != nil {
 		t.Fatal(err)
@@ -140,7 +190,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	terminalRefused := false
 	err = client.Connect(ctx, conn, fixtureConfig(true), &fixtureHandler{endpoint: clientEndpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		stage = "opening"
-		if e := request.OpenMCPClient(callCtx, c, journal, intent, g.MCPClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: policy, Clock: env.clock}); e != nil {
+		if e := request.OpenMCPClient(callCtx, c, journal, intent, g.MCPClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: clientPolicy, Clock: env.clock}); e != nil {
 			return e
 		}
 		for n := 0; n < 12; n++ {
@@ -188,7 +238,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	if !bytes.HasPrefix(after, before) {
 		t.Fatal("journal identity replaced")
 	}
-	if mode == "allowed" || mode == "terminal" {
+	if mode == "allowed" || mode == "terminal" || mode == "approved-binding" {
 		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), []byte(`{"sum":5}`)) || loaded.calls.Load() != 1 {
 			t.Fatalf("verified delivery/effect: %+v calls=%d", delivery, loaded.calls.Load())
 		}
@@ -213,10 +263,10 @@ func runNativeFixture(t *testing.T, mode string) {
 	// Completed/uncertain replay fences survive a clean host restart; neither
 	// terminal may be reset by choosing create=true on the existing ledger.
 	closeHost(server)
-	if _, e := toolhost.Open(serverPath, true, fixtureBob, hostServices(serverIntent, serverResult, serverPolicy), bindings, fixtureBounds()); e == nil {
+	if _, e := toolhost.Open(serverPath, true, fixtureBob, hostServices(serverIntent, serverResult, receiverPolicy), bindings, fixtureBounds()); e == nil {
 		t.Fatal("existing ledger recreated")
 	}
-	recovered, e := toolhost.Open(serverPath, false, fixtureBob, hostServices(serverIntent, serverResult, serverPolicy), bindings, fixtureBounds())
+	recovered, e := toolhost.Open(serverPath, false, fixtureBob, hostServices(serverIntent, serverResult, receiverPolicy), bindings, fixtureBounds())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -232,7 +282,7 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 	}
 	expected := "COMPLETED"
-	if mode != "allowed" && mode != "terminal" {
+	if mode != "allowed" && mode != "terminal" && mode != "approved-binding" {
 		expected = "UNKNOWN"
 	}
 	if last["state"] != expected {

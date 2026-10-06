@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	b "github.com/sage-x-project/sage-adk/core/guardbinding"
 	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 	h "github.com/sage-x-project/sage/pkg/agent/hpke"
@@ -313,4 +314,35 @@ func fixtureConfig(client bool) g.MCPConnectionConfig {
 		c.RecipientKey = fixtureBob + "#signing-1"
 	}
 	return c
+}
+
+// This inert factory exercises the public loader contract only. It does not
+// attest an OS-loaded evaluator or independently deployed component.
+type fixtureOperationFactory struct{ instance *fixtureLoadedTool }
+
+func (f *fixtureOperationFactory) Load(_ context.Context, s *b.Snapshot) (b.Instance, error) {
+	pd, e := g.PolicyCommitment(s.Policy())
+	if e != nil {
+		return nil, e
+	}
+	md, e := g.ManifestCommitment(s.Manifest())
+	if e != nil {
+		return nil, e
+	}
+	return &fixtureOperationInstance{instance: f.instance, policy: pd, manifest: md}, nil
+}
+
+type fixtureOperationInstance struct {
+	instance         *fixtureLoadedTool
+	policy, manifest string
+}
+
+func (i *fixtureOperationInstance) Check(ctx context.Context, policy, manifest, tool string) error {
+	if policy != i.policy || manifest != i.manifest {
+		return g.ErrInvalid
+	}
+	return i.instance.Check(ctx, manifest, tool)
+}
+func (i *fixtureOperationInstance) Execute(ctx context.Context, args []byte) ([]byte, error) {
+	return i.instance.Execute(ctx, args)
 }
