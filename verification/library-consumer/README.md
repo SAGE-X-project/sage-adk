@@ -16,10 +16,11 @@ exercises actual local Ed25519 issuance and failure scenarios.
 
 The consumer also runs the native guarded tool fixture through only public APIs:
 capture, issuance, same-journal transfer, encrypted loopback setup, one inert sum
-effect, signed verified delivery, terminal handoff refusal and ledger recovery.
+effect, signed verified delivery and ledger recovery.
 `toolhost_fixture_test.go` and `toolhost_runtime_test.go` mirror the root positive
 fixture except for the package name. They check public packaging compatibility,
-not an independent protocol oracle. Root unit scenarios cover denials.
+not an independent protocol oracle. Root unit scenarios cover denials, including terminal handoff refusal and its
+required connection retirement.
 
 These are local fixtures. They do not verify effect routes outside the explicit
 native host, authoritative registry ownership or deployed conformance.

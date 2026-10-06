@@ -132,6 +132,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	}
 	stage := "connecting"
 	var delivery *g.ClientDelivery
+	terminalRefused := false
 	err = client.Connect(ctx, conn, fixtureConfig(true), &fixtureHandler{endpoint: clientEndpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		stage = "opening"
 		if e := request.OpenMCPClient(callCtx, c, journal, intent, g.MCPClientServices{IntentAuthority: clientIntent, ResultAuthority: clientResult, Policy: policy, Clock: env.clock}); e != nil {
@@ -147,9 +148,15 @@ func runNativeFixture(t *testing.T, mode string) {
 				return e
 			}
 			if delivery.Status() == "completed" || delivery.Status() == "unknown" {
-				// A terminal Client refuses another handoff instead of repeating effects.
-				if repeated, e := c.Exchange(); e == nil || repeated != nil {
-					return errors.New("terminal client dispatched again")
+				if mode == "terminal" {
+					stage = "terminal-refusal"
+					// Refusal retires this native connection. Connect must fail too;
+					// it cannot be treated as a successful session termination.
+					if repeated, e := c.Exchange(); e == nil || repeated != nil {
+						return errors.New("terminal client dispatched again")
+					}
+					terminalRefused = true
+					return errors.New("expected terminal handoff refusal")
 				}
 				return nil
 			}
@@ -159,6 +166,9 @@ func runNativeFixture(t *testing.T, mode string) {
 	cancel()
 	if e := <-serverDone; e != nil && !errors.Is(e, context.Canceled) {
 		t.Errorf("server lifecycle: %v", e)
+	}
+	if mode == "terminal" && terminalRefused && err != nil {
+		err = nil // Expected native connection retirement after the refused handoff.
 	}
 	if err != nil {
 		t.Fatalf("%s: %v; receiver policy=%d checks=%d effects=%d reads=%d", stage, err, serverPolicy.calls.Load(), loaded.checks.Load(), loaded.calls.Load(), env.reads.Load())
@@ -173,7 +183,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	if !bytes.HasPrefix(after, before) {
 		t.Fatal("journal identity replaced")
 	}
-	if mode == "allowed" {
+	if mode == "allowed" || mode == "terminal" {
 		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), []byte(`{"sum":5}`)) || loaded.calls.Load() != 1 {
 			t.Fatalf("verified delivery/effect: %+v calls=%d", delivery, loaded.calls.Load())
 		}
@@ -191,6 +201,9 @@ func runNativeFixture(t *testing.T, mode string) {
 		if loaded.calls.Load() != want {
 			t.Fatalf("denial effects: %d", loaded.calls.Load())
 		}
+	}
+	if mode == "terminal" && !terminalRefused {
+		t.Fatal("terminal refusal was not reached")
 	}
 	// Completed/uncertain replay fences survive a clean host restart; neither
 	// terminal may be reset by choosing create=true on the existing ledger.
@@ -214,7 +227,7 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 	}
 	expected := "COMPLETED"
-	if mode != "allowed" {
+	if mode != "allowed" && mode != "terminal" {
 		expected = "UNKNOWN"
 	}
 	if last["state"] != expected {

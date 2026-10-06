@@ -10,3 +10,5 @@ func TestNativeWorkerDenialScenarios(t *testing.T) {
 		t.Run(mode, func(t *testing.T) { runNativeFixture(t, mode) })
 	}
 }
+
+func TestNativeTerminalClientRefusesHandoff(t *testing.T) { runNativeFixture(t, "terminal") }
