@@ -25,7 +25,9 @@ const ConfigurationPath = "calculator.json"
 // Measurement must verify the actual protected running host image, exact policy
 // evaluator, this factory, compiled calculator and their dependencies against
 // the approved snapshot. Hashing source files or echoing supplied digests is not
-// sufficient. The implementation is trusted, bounded, cancellation-aware,
+// sufficient. Establish protected verification before image/dependency loading
+// and retained immutable loaded identity, not just an after-load file observation.
+// The implementation is trusted, bounded, cancellation-aware,
 // concurrent-safe and non-reentrant; it receives no signing or host authority.
 type Measurement interface {
 	Check(context.Context, *b.Snapshot) error

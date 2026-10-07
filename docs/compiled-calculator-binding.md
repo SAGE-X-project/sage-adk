@@ -68,7 +68,11 @@ host, exact policy evaluator, factory, compiled calculator and their dependencie
 correspond to the approved image/artifacts. It must inspect the actual loaded
 runtime identity using an appropriate protected deployment mechanism. The local
 image file, source hashes, package names or supplied digests alone cannot establish
-this. The image dependency set may need files beyond the executable; administration
+this. Measurement must also establish trusted verification of approved image and
+dependency bytes **before loading**, and retention of that same immutable loaded
+identity. A post-start hash of a mutable executable path supplies neither fact.
+The protected launcher/image mechanism and its evidence remain provider work.
+The image dependency set may need files beyond the executable; administration
 and measurement must cover it in both relevant manifests.
 
 The factory verifies descriptor commitments, exact component bytes and configuration
