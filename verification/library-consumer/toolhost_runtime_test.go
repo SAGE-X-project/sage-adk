@@ -14,6 +14,7 @@ import (
 
 	"github.com/sage-x-project/sage-adk/core/capture"
 	b "github.com/sage-x-project/sage-adk/core/guardbinding"
+	calc "github.com/sage-x-project/sage-adk/core/guardcalculator"
 	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	"github.com/sage-x-project/sage-adk/core/toolhost"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
@@ -21,8 +22,9 @@ import (
 
 // Only private files, loopback, ephemeral keys and inert arithmetic are used.
 // Fixture registry/measurement services are not deployment attestation.
-func TestNativeGuardedToolRuntime(t *testing.T)       { runNativeFixture(t, "allowed") }
-func TestApprovedOperationNativeRuntime(t *testing.T) { runNativeFixture(t, "approved-binding") }
+func TestNativeGuardedToolRuntime(t *testing.T)        { runNativeFixture(t, "allowed") }
+func TestApprovedOperationNativeRuntime(t *testing.T)  { runNativeFixture(t, "approved-binding") }
+func TestCompiledCalculatorNativeRuntime(t *testing.T) { runNativeFixture(t, "calculator-binding") }
 func runNativeFixture(t *testing.T, mode string) {
 	t.Helper()
 	env := newFixtureEnvironment(t)
@@ -98,6 +100,65 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 		bindings = []toolhost.Binding{binding}
 	}
+	toolName := "sum"
+	proposalArguments := []byte(`{"a":2,"b":3}`)
+	expectedOutput := []byte(`{"sum":5}`)
+	if mode == "calculator-binding" {
+		toolName = "calculator"
+		proposalArguments = []byte(`{"a":2,"b":3,"operation":"add"}`)
+		expectedOutput = []byte(`{"output":5,"success":true}`)
+		directory := filepath.Join(env.root, "calculator-artifacts")
+		if err = os.Mkdir(directory, 0700); err != nil {
+			t.Fatal(err)
+		}
+		rule := fixtureJSON(map[string]any{"version": "0.10.0", "recipient": fixtureBob, "keyid": fixtureAlice + "#signing-1", "tool": toolName, "arguments": json.RawMessage(proposalArguments), "max_lifetime": 300})
+		configuration := fixtureJSON(map[string]any{"version": "0.10.0", "tool": toolName, "image_path": "image.fixture", "operations": []string{"add"}, "absolute_operand_limit": 100})
+		artifacts := map[string][]byte{"image.fixture": []byte("synthetic runtime image observation"), "rules.json": rule, calc.ConfigurationPath: configuration}
+		for path, data := range artifacts {
+			if err = os.WriteFile(filepath.Join(directory, path), data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		files := func(names ...string) []byte {
+			rows := []any{}
+			for _, name := range names {
+				rows = append(rows, map[string]any{"path": name, "sha256": fixtureHash(artifacts[name])})
+			}
+			return fixtureJSON(map[string]any{"version": "0.10.0", "files": rows})
+		}
+		descriptor := fixtureJSON(map[string]any{"version": "0.10.0", "issuer": fixtureAlice, "epoch": "00000000-0000-4000-8000-000000000001", "engine": b.Engine, "artifacts": json.RawMessage(files("image.fixture", "rules.json"))})
+		component := files(calc.ConfigurationPath, "image.fixture")
+		// Real compiled calculator instances, but synthetic runtime-image appraisal
+		// and Registry providers. This is safe local integration, not deployment evidence.
+		factory, e := calc.NewFactory(calc.Config{Measurement: fixtureCalculatorMeasurement{}, MaxInstances: 2})
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Cleanup(func() {
+			if e := factory.Close(context.Background()); e != nil {
+				t.Error(e)
+			}
+		})
+		open := func() *b.Operation {
+			op, e := b.Open(context.Background(), request, b.Config{Directory: directory, Policy: descriptor, Manifest: component, Limits: b.Limits{FileBytes: 4096, TotalBytes: 16384}, Factory: factory})
+			if e != nil {
+				t.Fatal(e)
+			}
+			t.Cleanup(func() {
+				if e := op.Close(context.Background()); e != nil {
+					t.Error(e)
+				}
+			})
+			return op
+		}
+		issuerOperation, receiverOperation := open(), open()
+		clientPolicy, receiverPolicy, measurement = issuerOperation, receiverOperation, issuerOperation
+		binding, e := receiverOperation.Binding(context.Background())
+		if e != nil {
+			t.Fatal(e)
+		}
+		bindings = []toolhost.Binding{binding}
+	}
 	clientIntent, clientResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
 	serverIntent, serverResult := env.authority(t, fixtureAlice), env.authority(t, fixtureBob)
 	hostServices := func(intent, result *g.RegistryAuthority, p g.IntentPolicy) toolhost.Services {
@@ -140,7 +201,7 @@ func runNativeFixture(t *testing.T, mode string) {
 			t.Error(e)
 		}
 	}()
-	approved, err := issuer.Authorize(context.Background(), g.IntentProposal{Tool: "sum", Arguments: []byte(`{"a":2,"b":3}`), LifetimeSeconds: 300})
+	approved, err := issuer.Authorize(context.Background(), g.IntentProposal{Tool: toolName, Arguments: proposalArguments, LifetimeSeconds: 300})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,12 +299,14 @@ func runNativeFixture(t *testing.T, mode string) {
 	if !bytes.HasPrefix(after, before) {
 		t.Fatal("journal identity replaced")
 	}
-	if mode == "allowed" || mode == "terminal" || mode == "approved-binding" {
-		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), []byte(`{"sum":5}`)) || loaded.calls.Load() != 1 {
+	if mode == "allowed" || mode == "terminal" || mode == "approved-binding" || mode == "calculator-binding" {
+		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), expectedOutput) || (mode != "calculator-binding" && loaded.calls.Load() != 1) || (mode == "calculator-binding" && loaded.calls.Load() != 0) {
 			t.Fatalf("verified delivery/effect: %+v calls=%d", delivery, loaded.calls.Load())
 		}
-		if args := <-loaded.seen; !bytes.Equal(args, []byte(`{"a":2,"b":3}`)) {
-			t.Fatal("arguments changed")
+		if mode != "calculator-binding" {
+			if args := <-loaded.seen; !bytes.Equal(args, proposalArguments) {
+				t.Fatal("arguments changed")
+			}
 		}
 	} else {
 		if delivery == nil || delivery.Status() != "unknown" || len(delivery.Output()) != 0 {
@@ -282,7 +345,7 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 	}
 	expected := "COMPLETED"
-	if mode != "allowed" && mode != "terminal" && mode != "approved-binding" {
+	if mode != "allowed" && mode != "terminal" && mode != "approved-binding" && mode != "calculator-binding" {
 		expected = "UNKNOWN"
 	}
 	if last["state"] != expected {
@@ -291,4 +354,14 @@ func runNativeFixture(t *testing.T, mode string) {
 	if loaded.calls.Load() > 1 {
 		t.Fatal("recovery executed again")
 	}
+}
+
+// Deliberately synthetic image appraisal. Do not use this provider in deployments.
+type fixtureCalculatorMeasurement struct{}
+
+func (fixtureCalculatorMeasurement) Check(ctx context.Context, snapshot *b.Snapshot) error {
+	if ctx.Err() != nil || snapshot == nil {
+		return errors.New("fixture image observation unavailable")
+	}
+	return nil
 }
