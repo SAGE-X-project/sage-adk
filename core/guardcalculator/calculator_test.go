@@ -335,3 +335,59 @@ func TestInvalidHandlesAndCancellation(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestImageMustBeCoveredByBothDescriptors(t *testing.T) {
+	for _, scope := range []string{"policy", "component"} {
+		t.Run(scope, func(t *testing.T) {
+			e := fixture(t, `{"a":2,"b":3,"operation":"add"}`, nil)
+			var descriptor map[string]json.RawMessage
+			raw := e.config.Manifest
+			if scope == "policy" {
+				if err := json.Unmarshal(e.config.Policy, &descriptor); err != nil {
+					t.Fatal(err)
+				}
+				raw = descriptor["artifacts"]
+			}
+			var artifacts map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &artifacts); err != nil {
+				t.Fatal(err)
+			}
+			var rows []map[string]string
+			if err := json.Unmarshal(artifacts["files"], &rows); err != nil {
+				t.Fatal(err)
+			}
+			retained := rows[:0]
+			for _, row := range rows {
+				if row["path"] != "image.fixture" {
+					retained = append(retained, row)
+				}
+			}
+			artifacts["files"] = encoded(retained)
+			if scope == "policy" {
+				descriptor["artifacts"] = encoded(artifacts)
+				e.config.Policy = encoded(descriptor)
+			} else {
+				e.config.Manifest = encoded(artifacts)
+			}
+			if operation, err := b.Open(context.Background(), e.request, e.config); err == nil || operation != nil {
+				t.Fatal("accepted image covered by only one descriptor")
+			}
+		})
+	}
+}
+
+func TestNonfiniteArithmeticOutputRefusesAndRetires(t *testing.T) {
+	args := []byte(`{"a":1000000,"b":1e-320,"operation":"divide"}`)
+	e := fixture(t, string(args), nil)
+	operation := e.open(t)
+	binding, err := operation.Binding(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if output, err := binding.Tool.Execute(context.Background(), args); err == nil || output != nil {
+		t.Fatal("nonfinite arithmetic escaped canonical output checks")
+	}
+	if _, err = operation.Binding(context.Background()); err == nil {
+		t.Fatal("uncertain output silently restored the instance")
+	}
+}
