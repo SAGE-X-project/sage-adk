@@ -127,3 +127,10 @@ Concrete protected runtime measurement, authoritative blockchain Source and
 independent effect observation remain deployment work. Dynamic plugin/MCP loaders
 need their own approved-byte/immutable-instance/isolation contracts; this adapter
 supplies none implicitly and does not advance later demo or protocol upgrade work.
+
+The later [sealed Linux image supervisor](sealed-host-image.md) supplies actual
+pre-exec sealed-byte verification and kernel-backed child executable observations
+for a restricted static Go profile. It is deliberately not a parent calculator's
+Measurement implementation. A protected bridge to the same measured child's native
+gate and actual deployment isolation remain required; the existing synthetic
+calculator measurement tests are not promoted to deployed evidence.

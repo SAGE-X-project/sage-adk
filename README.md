@@ -377,8 +377,10 @@ and issuer binding are available through explicit host APIs described in the
 execution admission for pinned instances. [Clock and signing adapters](docs/guard-provider-bindings.md)
 bind common time and protected Ed25519 custody to current Registry authority. The
 [compiled calculator binding](docs/compiled-calculator-binding.md) connects the existing
-calculator to approved configuration and mandatory runtime measurement. Actual
-provider/effect bindings and deployed Inspector evidence remain required.
+calculator to approved configuration and mandatory runtime measurement. The
+[sealed Linux image supervisor](docs/sealed-host-image.md) verifies and observes
+a restricted static host image; its child-to-supervisor gate binding remains
+required. Actual provider/effect bindings and deployed Inspector evidence remain required.
 
 ## Development
 
@@ -484,8 +486,10 @@ and issuer binding are available through explicit host APIs described in the
 execution admission for pinned instances. [Clock and signing adapters](docs/guard-provider-bindings.md)
 bind common time and protected Ed25519 custody to current Registry authority. The
 [compiled calculator binding](docs/compiled-calculator-binding.md) connects the existing
-calculator to approved configuration and mandatory runtime measurement. Actual
-provider/effect bindings and deployed Inspector evidence remain required.
+calculator to approved configuration and mandatory runtime measurement. The
+[sealed Linux image supervisor](docs/sealed-host-image.md) verifies and observes
+a restricted static host image; its child-to-supervisor gate binding remains
+required. Actual provider/effect bindings and deployed Inspector evidence remain required.
 
 ## Development
 - Go 1.26.0+
