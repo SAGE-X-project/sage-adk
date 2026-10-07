@@ -113,3 +113,10 @@ refactoring obligation; full-project lint is not reported as passing. The
 existing Linux/macOS CI gates build, vet, full race tests and the external
 consumer. CI also enforces new-package lint and at least 90 percent coverage;
 it does not currently gate the legacy full-project lint backlog.
+
+The [compiled calculator binding](compiled-calculator-binding.md) provides a
+concrete factory for the existing static ADK calculator, with approved closed
+configuration, image coverage, mandatory protected runtime measurement and one
+private instance. Its local signed MCP/consumer tests execute real arithmetic;
+image appraisal and Registry providers remain synthetic. It is not a universal
+loader or deployed-host attestation and does not change historical Inspector verdicts.
