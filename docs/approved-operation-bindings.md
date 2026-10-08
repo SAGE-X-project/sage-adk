@@ -53,8 +53,9 @@ argument object and lifetime bound. `ApproveIntent` checks every field in the
 closed canonical root intent, including the exact captured request, original,
 policy and manifest commitments. Core issuance still checks current authority/
 time and owns one-use approval, permanent issuance fencing and the Client journal.
-This binding supports root operations; it refuses a carried parent ID. Admitted
-hop policy must be bound separately. The rules do not infer semantic equivalence
+The `Open` entry point supports root operations and refuses a carried parent ID.
+The separate [OpenHop binding](approved-hop-operation-bindings.md) requires an
+actual retained native parent and independently approved local policy/loader. The rules do not infer semantic equivalence
 from natural-language input; the original digest is an audit commitment. A
 trusted application must select an appropriate approved policy for the request.
 Human confirmation is optional under that policy; skipping confirmation does

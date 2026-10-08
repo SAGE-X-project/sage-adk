@@ -570,3 +570,7 @@ For complete details:
 
 See [admitted hop capture](docs/admitted-hop-capture.md) for retaining authenticated
 upstream originals and applying independent downstream policy through native MCP.
+
+See [approved downstream operation binding](docs/approved-hop-operation-bindings.md)
+for connecting retained native parent capture to independent exact policy and
+immutable loader checks with `guardbinding.OpenHop`; root `Open` stays separate.

@@ -41,7 +41,7 @@ type Config struct {
 }
 
 // Factory creates private calculator instances, never a mutable Tool Registry.
-// Only use Load as guardbinding.Open's protected Factory. It does not provide
+// Only use Load as guardbinding.Open/OpenHop's protected Factory. It does not provide
 // signing or execution authorization. Retire hosts and Operations before Close.
 type Factory struct {
 	gate        chan struct{}

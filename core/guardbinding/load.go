@@ -38,7 +38,37 @@ func absent(v any) bool {
 // Open verifies independent approved descriptors and exact file snapshots before
 // publishing an operation. The selected root must be protected local storage;
 // ordinary directory permissions do not establish attacker-resistant isolation.
-func Open(ctx context.Context, request *capture.Request, c Config) (operation *Operation, err error) {
+func Open(ctx context.Context, request *capture.Request, c Config) (*Operation, error) {
+	return open(ctx, request, c, "", "")
+}
+
+// OpenHop binds independent approved policy/artifacts and one immutable loader
+// instance to a retained original from an actually running native parent. The
+// policy issuer must equal that authenticated inbound recipient. No permission
+// or key is inherited. Keep this capability in the protected native coordinator;
+// loaders receive only Snapshot, never Invocation, admission or signing custody.
+func OpenHop(ctx context.Context, request *capture.HopRequest, c Config) (*Operation, error) {
+	if !active(ctx) || request == nil {
+		return nil, ErrDenied
+	}
+	inputs, err := request.Inputs(ctx)
+	if err != nil || len(inputs) != 1 {
+		return nil, ErrDenied
+	}
+	var envelope struct {
+		Intent struct {
+			Recipient string `json:"recipient"`
+			CallID    string `json:"call_id"`
+		} `json:"intent"`
+	}
+	if json.Unmarshal(inputs[0], &envelope) != nil || envelope.Intent.Recipient == "" ||
+		!uuid.MatchString(request.ParentCallID()) || envelope.Intent.CallID != request.ParentCallID() {
+		return nil, ErrDenied
+	}
+	return open(ctx, request, c, request.ParentCallID(), envelope.Intent.Recipient)
+}
+
+func open(ctx context.Context, request retainedInput, c Config, parent, issuer string) (operation *Operation, err error) {
 	var root *os.Root
 	defer func() {
 		if recover() != nil {
@@ -49,7 +79,7 @@ func Open(ctx context.Context, request *capture.Request, c Config) (operation *O
 			_ = root.Close()
 		}
 	}()
-	if !active(ctx) || request == nil || absent(c.Factory) || c.Limits.FileBytes < 1 || c.Limits.FileBytes > 64<<20 || c.Limits.TotalBytes < 1 || c.Limits.TotalBytes > 256<<20 {
+	if !active(ctx) || absent(request) || absent(c.Factory) || c.Limits.FileBytes < 1 || c.Limits.FileBytes > 64<<20 || c.Limits.TotalBytes < 1 || c.Limits.TotalBytes > 256<<20 {
 		return nil, ErrDenied
 	}
 	if _, e := request.Inputs(ctx); e != nil {
@@ -77,7 +107,7 @@ func Open(ctx context.Context, request *capture.Request, c Config) (operation *O
 		Artifacts descriptor `json:"artifacts"`
 	}
 	var m descriptor
-	if json.Unmarshal(policy, &p) != nil || json.Unmarshal(manifest, &m) != nil || p.Engine != Engine || len(m.Files) == 0 {
+	if json.Unmarshal(policy, &p) != nil || json.Unmarshal(manifest, &m) != nil || p.Engine != Engine || len(m.Files) == 0 || (issuer != "" && p.Issuer != issuer) {
 		return nil, ErrDenied
 	}
 	entries := map[string]string{}
@@ -98,7 +128,7 @@ func Open(ctx context.Context, request *capture.Request, c Config) (operation *O
 	if e != nil {
 		return nil, ErrDenied
 	}
-	o := &Operation{root: root, request: request, limits: c.Limits, policy: policy, manifest: manifest, policyDigest: pd, manifestDigest: md, issuer: p.Issuer, gate: make(chan struct{}, 1)}
+	o := &Operation{root: root, request: request, parentID: parent, limits: c.Limits, policy: policy, manifest: manifest, policyDigest: pd, manifestDigest: md, issuer: p.Issuer, gate: make(chan struct{}, 1)}
 	o.gate <- struct{}{}
 	for path, digest := range entries {
 		o.entries = append(o.entries, file{path, digest})
@@ -117,6 +147,9 @@ func Open(ctx context.Context, request *capture.Request, c Config) (operation *O
 		}
 	}
 	snapshot := &Snapshot{artifacts: artifacts, policy: policy, manifest: manifest}
+	if _, e = request.Inputs(ctx); e != nil {
+		return nil, ErrDenied
+	}
 	o.instance, e = c.Factory.Load(ctx, snapshot)
 	if e != nil || absent(o.instance) || o.check(ctx) != nil {
 		return nil, ErrDenied

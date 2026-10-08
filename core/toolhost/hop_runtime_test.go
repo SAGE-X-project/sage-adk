@@ -12,11 +12,13 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/sage-x-project/sage-adk/core/capture"
+	b "github.com/sage-x-project/sage-adk/core/guardbinding"
 	p "github.com/sage-x-project/sage-adk/core/guardservices"
 	"github.com/sage-x-project/sage-adk/core/toolhost"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
@@ -127,20 +129,35 @@ func (s *hopIntentBackend) Sign(ctx context.Context, b []byte) ([]byte, error) {
 }
 
 type hopPolicy struct {
-	request atomic.Pointer[capture.HopRequest]
-	enabled atomic.Bool
+	request  atomic.Pointer[capture.HopRequest]
+	enabled  atomic.Bool
+	approved *approvedHopFixture
 }
 
-func (p *hopPolicy) Bindings(_ context.Context, issuer, id string) (string, []byte, []byte, error) {
+func (p *hopPolicy) Bindings(ctx context.Context, issuer, id string) (string, []byte, []byte, error) {
 	request := p.request.Load()
 	if !p.enabled.Load() || request == nil || issuer != fixtureBob || id != request.ID() {
 		return "", nil, nil, g.ErrInvalid
+	}
+	if p.approved != nil {
+		op := p.approved.operation.Load()
+		if op == nil {
+			return "", nil, nil, g.ErrInvalid
+		}
+		return op.Bindings(ctx, issuer, id)
 	}
 	manifest := fixtureManifest()
 	policy := fixtureJSON(map[string]any{"version": "0.10.0", "issuer": fixtureBob, "epoch": "00000000-0000-4000-8000-000000000011", "engine": "inert-independent-hop-policy/1", "artifacts": json.RawMessage(manifest)})
 	return request.Digest(), policy, manifest, nil
 }
 func (p *hopPolicy) Authorize(ctx context.Context, issuer, tool string, args []byte) error {
+	if p.approved != nil {
+		op := p.approved.operation.Load()
+		if op == nil {
+			return g.ErrInvalid
+		}
+		return op.Authorize(ctx, issuer, tool, args)
+	}
 	if ctx.Err() != nil || !p.enabled.Load() || issuer != fixtureBob || tool != "sum" || !bytes.Equal(args, []byte(`{"a":2,"b":3}`)) {
 		return g.ErrInvalid
 	}
@@ -193,6 +210,7 @@ type hopExecutor struct {
 	signer            *hopIntentBackend
 	protectedSigner   g.IntentSigner
 	mode              string
+	approved          *approvedHopFixture
 	captured          atomic.Pointer[capture.HopRequest]
 	calls             atomic.Int64
 }
@@ -237,13 +255,39 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 	if e.mode == "downstream-policy-denied" {
 		e.policy.enabled.Store(false)
 	}
-	config := g.IssuerServices{Client: g.ClientServices{IntentAuthority: e.authority, ResultAuthority: e.result, Policy: e.policy, Clock: e.env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureBob, ExpectedRecipient: fixtureAlice}, Policy: e.policy, Signer: e.protectedSigner, Measurement: &fixtureLoadedTool{}, KeyID: fixtureBob + "#signing-1"}
+	var policy g.IssuancePolicy = e.policy
+	var measurement g.IntentMeasurement = &fixtureLoadedTool{}
+	arguments := []byte(`{"a":2,"b":3}`)
+	tool := "sum"
+	if e.approved != nil {
+		operation, err := e.approved.open(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+		defer func() { _ = operation.Close(context.Background()) }()
+		policy, measurement = operation, operation
+		if e.mode == "approved-upstream-policy-loss" {
+			e.upstream.enabled.Store(false)
+			denied := operation.Authorize(ctx, fixtureBob, "calculator", []byte(`{"a":2,"b":3,"operation":"add"}`))
+			e.upstream.enabled.Store(true)
+			if denied == nil || operation.Authorize(ctx, fixtureBob, "calculator", []byte(`{"a":2,"b":3,"operation":"add"}`)) == nil {
+				return nil, g.ErrInvalid
+			}
+			return nil, denied
+		}
+		tool = "calculator"
+		arguments = []byte(`{"a":2,"b":3,"operation":"add"}`)
+		if e.mode == "approved-policy-denied" {
+			arguments = []byte(`{"a":2,"b":4,"operation":"add"}`)
+		}
+	}
+	config := g.IssuerServices{Client: g.ClientServices{IntentAuthority: e.authority, ResultAuthority: e.result, Policy: e.policy, Clock: e.env.clock, Sender: fixtureNoSender{}, ExpectedIssuer: fixtureBob, ExpectedRecipient: fixtureAlice}, Policy: policy, Signer: e.protectedSigner, Measurement: measurement, KeyID: fixtureBob + "#signing-1"}
 	issuer, err := request.NewIntentIssuer(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = issuer.Retire() }()
-	approved, err := issuer.Authorize(ctx, g.IntentProposal{Tool: "sum", Arguments: []byte(`{"a":2,"b":3}`), LifetimeSeconds: 300})
+	approved, err := issuer.Authorize(ctx, g.IntentProposal{Tool: tool, Arguments: arguments, LifetimeSeconds: 300})
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +317,11 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 		return nil, err
 	}
 	var delivered *g.ClientDelivery
-	err = e.downstream.Connect(ctx, conn, g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: fixtureAlice, RecipientKey: fixtureAlice + "#signing-1", Name: "fixed-hop", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}, &fixtureHandler{endpoint: e.endpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
+	connectionConfig := g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: fixtureAlice, RecipientKey: fixtureAlice + "#signing-1", Name: "fixed-hop", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}
+	if e.approved != nil {
+		connectionConfig.Timeout = 10 * time.Second
+	}
+	err = e.downstream.Connect(ctx, conn, connectionConfig, &fixtureHandler{endpoint: e.endpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		path := e.signer.path
 		if e.mode == "missing-journal" {
 			path = filepath.Join(e.env.root, "missing-hop-journal")
@@ -283,12 +331,18 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 			return err
 		}
 		var err error
-		for n := 0; n < 5; n++ {
+		polls := 5
+		if e.approved != nil {
+			polls = 12
+		}
+		for n := 0; n < polls; n++ {
 			time.Sleep(time.Second)
-			e.env.clock.mono.Add(1000)
+			if e.approved == nil {
+				e.env.clock.mono.Add(1000)
+			}
 			delivered, err = c.Exchange()
 			if err != nil {
-				e.t.Logf("fixed child exchange refused: %v", err)
+				e.t.Logf("fixed child exchange refused: %v; worker context=%v", err, ctx.Err())
 				return err
 			}
 			if delivered != nil && delivered.Status() != "pending" {
@@ -300,10 +354,17 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 	if err != nil {
 		e.t.Logf("fixed child connection refused: %v", err)
 	}
-	if err != nil || delivered == nil || delivered.Status() != "completed" || !delivered.FirstTerminal() || !bytes.Equal(delivered.Output(), []byte(`{"sum":5}`)) {
+	if err != nil || delivered == nil || delivered.Status() != "completed" || !delivered.FirstTerminal() || !bytes.Equal(delivered.Output(), e.expectedOutput()) {
 		return nil, g.ErrInvalid
 	}
 	return delivered.Output(), nil
+}
+
+func (e *hopExecutor) expectedOutput() []byte {
+	if e.approved != nil {
+		return []byte(`{"output":5,"success":true}`)
+	}
+	return []byte(`{"sum":5}`)
 }
 
 func TestAdmittedHopCaptureNativeRuntime(t *testing.T) {
@@ -345,9 +406,35 @@ func runAdmittedHop(t *testing.T, mode string) {
 	bounds.Worker = 10 * time.Second
 	bounds.Request = 20 * time.Second
 	bounds.Client = 20 * time.Second
+	lifetime := 20 * time.Second
+	if strings.HasPrefix(mode, "approved-") {
+		// Includes durable upstream/capture/loader checks under race-enabled CI.
+		// Preserve finite request/worker/client bounds and all core validation.
+		bounds.Worker = 30 * time.Second
+		bounds.Request, bounds.Client = time.Minute, time.Minute
+		lifetime = time.Minute
+	}
 	finalTool := &fixtureLoadedTool{}
-	md, _ := g.ManifestCommitment(fixtureManifest())
-	final, err := toolhost.Open(filepath.Join(env.root, "final-ledger"), true, fixtureAlice, toolhost.Services{IntentAuthority: finalIntent, ResultAuthority: finalResult, Policy: downstreamPolicy, Signer: hopResultSigner(t, finalResult, fixtureAlice, env.alice), Clock: env.clock}, []toolhost.Binding{{Name: "sum", ManifestDigest: md, Tool: finalTool}}, bounds)
+	var approved *approvedHopFixture
+	var finalLoaded toolhost.LoadedTool = finalTool
+	toolName := "sum"
+	if strings.HasPrefix(mode, "approved-") {
+		approved = newApprovedHopFixture(t, env, mode)
+		defer func() {
+			if err := approved.factory.Close(context.Background()); err != nil {
+				t.Error(err)
+			}
+		}()
+		downstreamPolicy.approved = approved
+		finalLoaded = approved
+		toolName = "calculator"
+	}
+	manifest := fixtureManifest()
+	if approved != nil {
+		manifest = approved.config.Manifest
+	}
+	md, _ := g.ManifestCommitment(manifest)
+	final, err := toolhost.Open(filepath.Join(env.root, "final-ledger"), true, fixtureAlice, toolhost.Services{IntentAuthority: finalIntent, ResultAuthority: finalResult, Policy: downstreamPolicy, Signer: hopResultSigner(t, finalResult, fixtureAlice, env.alice), Clock: env.clock}, []toolhost.Binding{{Name: toolName, ManifestDigest: md, Tool: finalLoaded}}, bounds)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,7 +451,7 @@ func runAdmittedHop(t *testing.T, mode string) {
 		t.Fatal(err)
 	}
 	// Only issuer services receive signing custody; executor keeps the protected adapter.
-	exec := &hopExecutor{t: t, env: env, host: capturer, downstream: child, endpoint: childEP, upstream: upstream, upstreamAuthority: parentIntent, policy: downstreamPolicy, authority: childIntent, result: childResult, signer: signer, protectedSigner: protectedSigner, mode: mode}
+	exec := &hopExecutor{t: t, env: env, host: capturer, downstream: child, endpoint: childEP, upstream: upstream, upstreamAuthority: parentIntent, policy: downstreamPolicy, authority: childIntent, result: childResult, signer: signer, protectedSigner: protectedSigner, mode: mode, approved: approved}
 	parent, err := g.OpenMCPHost(filepath.Join(env.root, "parent-ledger"), true, fixtureBob, nativeServices(parentIntent, parentResult, rootPolicy, exec, fixtureBob, env.bob), bounds)
 	if err != nil {
 		t.Fatal(err)
@@ -373,7 +460,7 @@ func runAdmittedHop(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), lifetime)
 	defer cancel()
 	closeNative := func(host *g.MCPHost) {
 		closeCtx, stop := context.WithTimeout(context.Background(), 3*time.Second)
@@ -396,12 +483,21 @@ func runAdmittedHop(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if approved != nil {
+		finalListener = approvedHopListener{Listener: finalListener, t: t, label: "final"}
+	}
 	exec.listener = finalListener
 	parentListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
+	if approved != nil {
+		parentListener = approvedHopListener{Listener: parentListener, t: t, label: "parent"}
+	}
 	env.clock.mono.Add(360000)
+	if approved != nil {
+		env.clock.real.Store(&fixtureClockOrigin{base: env.clock.mono.Load(), started: time.Now()})
+	}
 	rootSigner := &fixtureIntentSigner{env: env, path: filepath.Join(env.root, "root-journal")}
 	rootProtected, err := p.NewIntentSigner(context.Background(), rootIntent, fixtureAlice, fixtureAlice+"#signing-1", rootSigner)
 	if err != nil {
@@ -437,22 +533,33 @@ func runAdmittedHop(t *testing.T, mode string) {
 			}
 		}}
 	}
+	finalConfig := g.MCPConnectionConfig{Role: g.MCPResponder, Name: "fixed-final", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}
+	parentConfig, clientConfig := fixtureConfig(false), fixtureConfig(true)
+	if approved != nil {
+		finalConfig.Timeout, parentConfig.Timeout, clientConfig.Timeout = 10*time.Second, 10*time.Second, 10*time.Second
+	}
 	go func() {
-		done <- final.Serve(ctx, finalListener, 1, g.MCPConnectionConfig{Role: g.MCPResponder, Name: "fixed-final", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}, handler(finalEP))
+		done <- final.Serve(ctx, finalListener, 1, finalConfig, handler(finalEP))
 	}()
-	go func() { done <- parent.Serve(ctx, parentListener, 1, fixtureConfig(false), handler(parentEP)) }()
+	go func() { done <- parent.Serve(ctx, parentListener, 1, parentConfig, handler(parentEP)) }()
 	conn, err := net.DialTimeout("tcp", parentListener.Addr().String(), time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var delivery *g.ClientDelivery
-	err = client.Connect(ctx, conn, fixtureConfig(true), &fixtureHandler{endpoint: rootEP, handle: func(callCtx context.Context, c *g.MCPConnection) error {
+	err = client.Connect(ctx, conn, clientConfig, &fixtureHandler{endpoint: rootEP, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		if err := root.OpenMCPClient(callCtx, c, rootSigner.path, rootIntentBytes, g.MCPClientServices{IntentAuthority: rootIntent, ResultAuthority: rootResult, Policy: rootPolicy, Clock: env.clock}); err != nil {
 			return err
 		}
-		for n := 0; n < 8; n++ {
+		polls := 8
+		if approved != nil {
+			polls = 20
+		}
+		for n := 0; n < polls; n++ {
 			time.Sleep(time.Second)
-			env.clock.mono.Add(1000)
+			if approved == nil {
+				env.clock.mono.Add(1000)
+			}
 			var err error
 			delivery, err = c.Exchange()
 			if err != nil {
@@ -474,16 +581,20 @@ func runAdmittedHop(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatalf("hop runtime: %v", err)
 	}
-	allowed := mode == "allowed" || mode == "restore"
+	allowed := mode == "allowed" || mode == "restore" || mode == "approved-allowed"
 	if delivery == nil {
 		t.Fatal("missing root verified delivery")
 	}
+	effects := finalTool.calls.Load()
+	if approved != nil {
+		effects = approved.effects.Load()
+	}
 	if allowed {
-		if delivery.Status() != "completed" || !bytes.Equal(delivery.Output(), []byte(`{"sum":5}`)) || finalTool.calls.Load() != 1 || signer.calls.Load() != 1 {
-			t.Fatalf("completed chain: status=%s effects=%d signs=%d", delivery.Status(), finalTool.calls.Load(), signer.calls.Load())
+		if delivery.Status() != "completed" || !bytes.Equal(delivery.Output(), exec.expectedOutput()) || effects != 1 || signer.calls.Load() != 1 {
+			t.Fatalf("completed chain: status=%s effects=%d signs=%d", delivery.Status(), effects, signer.calls.Load())
 		}
 	} else {
-		if delivery.Status() != "unknown" || len(delivery.Output()) != 0 || finalTool.calls.Load() != 0 {
+		if delivery.Status() != "unknown" || len(delivery.Output()) != 0 || effects != 0 {
 			t.Fatal("refused hop reached effect")
 		}
 		want := int64(0)
@@ -500,6 +611,13 @@ func runAdmittedHop(t *testing.T, mode string) {
 	retained := exec.captured.Load()
 	if retained == nil {
 		t.Fatal("parent capture missing")
+	}
+	if approved != nil {
+		checks := approved.measurement.checks.Load()
+		unavailable, err := b.OpenHop(context.Background(), retained, approved.config)
+		if err == nil || unavailable != nil || approved.measurement.checks.Load() != checks {
+			t.Fatal("finished parent reached another approved loader")
+		}
 	}
 	if _, e := retained.Inputs(context.Background()); e == nil {
 		t.Fatal("completed parent remained usable")
