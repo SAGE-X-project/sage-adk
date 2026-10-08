@@ -99,15 +99,14 @@ func mustJSON(v any) []byte {
 }
 
 type world struct {
-	clock                    *testClock
-	source                   *syntheticSource
-	aliceKey, bobKey         ed25519.PrivateKey
-	kemPrivate               []byte
-	operator                 ed25519.PrivateKey
-	policy, manifest         []byte
-	artifacts                map[string][]byte
-	aliceSigner, bobSigner   *guardsigner.Client
-	aliceIntent, bobTransfer *guardsigner.Client
+	clock                  *testClock
+	source                 *syntheticSource
+	aliceKey, bobKey       ed25519.PrivateKey
+	kemPrivate             []byte
+	operator               ed25519.PrivateKey
+	policy, manifest       []byte
+	artifacts              map[string][]byte
+	aliceSigner, bobSigner *guardsigner.Client
 }
 
 func newWorld(t *testing.T) *world {
