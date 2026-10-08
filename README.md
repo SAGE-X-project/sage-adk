@@ -378,6 +378,8 @@ execution admission for pinned instances. [Clock and signing adapters](docs/guar
 bind common time and protected Ed25519 custody to current Registry authority. The
 [compiled calculator binding](docs/compiled-calculator-binding.md) connects the existing
 calculator to approved configuration and mandatory runtime measurement. The
+[child measurement channel](docs/child-measurement-channel.md) connects supervised
+child observations to the same child calculator with mandatory local assurance. The
 [sealed Linux image supervisor](docs/sealed-host-image.md) verifies and observes
 a restricted static host image; its child-to-supervisor gate binding remains
 required. Actual provider/effect bindings and deployed Inspector evidence remain required.
@@ -487,6 +489,8 @@ execution admission for pinned instances. [Clock and signing adapters](docs/guar
 bind common time and protected Ed25519 custody to current Registry authority. The
 [compiled calculator binding](docs/compiled-calculator-binding.md) connects the existing
 calculator to approved configuration and mandatory runtime measurement. The
+[child measurement channel](docs/child-measurement-channel.md) connects supervised
+child observations to the same child calculator with mandatory local assurance. The
 [sealed Linux image supervisor](docs/sealed-host-image.md) verifies and observes
 a restricted static host image; its child-to-supervisor gate binding remains
 required. Actual provider/effect bindings and deployed Inspector evidence remain required.

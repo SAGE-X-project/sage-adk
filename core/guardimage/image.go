@@ -38,6 +38,10 @@ type Config struct {
 	SHA256                string
 	Limit                 int64
 	Stdin, Stdout, Stderr *os.File
+	// MeasurementChannel is an optional protected inherited socket, available
+	// only as descriptor 4 in the approved child. It remains caller-owned. Keep
+	// it out of model/plugin custody; core/guardchannel supplies this binding.
+	MeasurementChannel *os.File
 }
 
 // Observation describes a local executable backing object, not instruction-page

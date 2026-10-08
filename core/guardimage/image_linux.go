@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -77,6 +78,9 @@ func start(ctx context.Context, c Config, raw []byte) (backend, error) {
 	pidfd := -1
 	cmd := exec.Command("/proc/self/fd/3")
 	cmd.ExtraFiles = []*os.File{file}
+	if c.MeasurementChannel != nil {
+		cmd.ExtraFiles = append(cmd.ExtraFiles, c.MeasurementChannel)
+	}
 	cmd.Env = []string{}
 	if c.Stdin != nil {
 		cmd.Stdin = c.Stdin
@@ -109,12 +113,25 @@ func start(ctx context.Context, c Config, raw []byte) (backend, error) {
 }
 
 func (p *linuxProcess) live() bool {
-	if p.pidfd < 0 {
+	return pidfdLive(p.pidfd, unix.Poll)
+}
+
+// A signal interruption is not evidence of exit. Retry only EINTR with a fixed
+// bound, and still require a fresh zero-readiness poll. Never retry a positive
+// exit event or substitute another PID/descriptor.
+func pidfdLive(fd int, poll func([]unix.PollFd, int) (int, error)) bool {
+	if fd < 0 {
 		return false
 	}
-	fds := []unix.PollFd{{Fd: int32(p.pidfd), Events: unix.POLLIN}}
-	n, err := unix.Poll(fds, 0)
-	return err == nil && n == 0 && fds[0].Revents == 0
+	for range 3 {
+		fds := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
+		n, err := poll(fds, 0)
+		if errors.Is(err, unix.EINTR) {
+			continue
+		}
+		return err == nil && n == 0 && fds[0].Revents == 0
+	}
+	return false
 }
 
 func (p *linuxProcess) observe(ctx context.Context) (Observation, error) {
