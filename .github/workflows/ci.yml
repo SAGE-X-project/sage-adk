@@ -81,6 +81,9 @@ jobs:
         run: |
           test "$(go env GOARCH)" = arm64
           go test -mod=readonly -race -timeout 3m -v ./core/capture ./core/toolhost ./core/guardimage ./core/guardchannel
+      - name: Diagnose fixed native hop refusals
+        if: ${{ !cancelled() }}
+        run: python3 scripts/trace-native-hop.py
 
   approved-operation-lint:
     name: Approved operation lint
