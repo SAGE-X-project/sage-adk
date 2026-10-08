@@ -98,7 +98,10 @@ measurement/loading while the real parent is live.
 The approved-hop fixture samples one real elapsed monotonic origin shared by both
 native legs; concurrent polling does not double-advance injected time. Workers
 are bounded to thirty seconds and request/client/test lifetime to one minute to
-cover durable checks on race-enabled runners. No production timer, freshness
+cover durable checks on race-enabled runners. Setup/frame waits use a finite
+ten-second budget because the core applies connection Timeout to frame IO too.
+Nonsecret listener diagnostics record timeouts without reading frame contents.
+No production timer, freshness
 rule, validation or successful-completion expectation is changed. Historical
 capture-only scenarios retain their original injected-clock configuration.
 

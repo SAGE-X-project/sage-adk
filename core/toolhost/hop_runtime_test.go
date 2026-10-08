@@ -317,7 +317,11 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 		return nil, err
 	}
 	var delivered *g.ClientDelivery
-	err = e.downstream.Connect(ctx, conn, g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: fixtureAlice, RecipientKey: fixtureAlice + "#signing-1", Name: "fixed-hop", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}, &fixtureHandler{endpoint: e.endpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
+	connectionConfig := g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: fixtureAlice, RecipientKey: fixtureAlice + "#signing-1", Name: "fixed-hop", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}
+	if e.approved != nil {
+		connectionConfig.Timeout = 10 * time.Second
+	}
+	err = e.downstream.Connect(ctx, conn, connectionConfig, &fixtureHandler{endpoint: e.endpoint, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		path := e.signer.path
 		if e.mode == "missing-journal" {
 			path = filepath.Join(e.env.root, "missing-hop-journal")
@@ -479,10 +483,16 @@ func runAdmittedHop(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if approved != nil {
+		finalListener = approvedHopListener{Listener: finalListener, t: t, label: "final"}
+	}
 	exec.listener = finalListener
 	parentListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if approved != nil {
+		parentListener = approvedHopListener{Listener: parentListener, t: t, label: "parent"}
 	}
 	env.clock.mono.Add(360000)
 	if approved != nil {
@@ -523,16 +533,21 @@ func runAdmittedHop(t *testing.T, mode string) {
 			}
 		}}
 	}
+	finalConfig := g.MCPConnectionConfig{Role: g.MCPResponder, Name: "fixed-final", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}
+	parentConfig, clientConfig := fixtureConfig(false), fixtureConfig(true)
+	if approved != nil {
+		finalConfig.Timeout, parentConfig.Timeout, clientConfig.Timeout = 10*time.Second, 10*time.Second, 10*time.Second
+	}
 	go func() {
-		done <- final.Serve(ctx, finalListener, 1, g.MCPConnectionConfig{Role: g.MCPResponder, Name: "fixed-final", Version: "1", TTLSeconds: 300, Timeout: 2 * time.Second}, handler(finalEP))
+		done <- final.Serve(ctx, finalListener, 1, finalConfig, handler(finalEP))
 	}()
-	go func() { done <- parent.Serve(ctx, parentListener, 1, fixtureConfig(false), handler(parentEP)) }()
+	go func() { done <- parent.Serve(ctx, parentListener, 1, parentConfig, handler(parentEP)) }()
 	conn, err := net.DialTimeout("tcp", parentListener.Addr().String(), time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var delivery *g.ClientDelivery
-	err = client.Connect(ctx, conn, fixtureConfig(true), &fixtureHandler{endpoint: rootEP, handle: func(callCtx context.Context, c *g.MCPConnection) error {
+	err = client.Connect(ctx, conn, clientConfig, &fixtureHandler{endpoint: rootEP, handle: func(callCtx context.Context, c *g.MCPConnection) error {
 		if err := root.OpenMCPClient(callCtx, c, rootSigner.path, rootIntentBytes, g.MCPClientServices{IntentAuthority: rootIntent, ResultAuthority: rootResult, Policy: rootPolicy, Clock: env.clock}); err != nil {
 			return err
 		}

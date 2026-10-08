@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -154,4 +155,35 @@ func TestApprovedHopClockUsesOneSharedOrigin(t *testing.T) {
 	if err != nil || stamp.MonoMS < mono || stamp.Unix != 100+stamp.MonoMS/1000 {
 		t.Fatal("fixture Registry stamp changed its clock origin")
 	}
+}
+
+// Nonsecret diagnostics preserve socket errors without capturing frame payloads.
+// The native core still owns deadlines, cancellation and authentication.
+type approvedHopListener struct {
+	net.Listener
+	t     *testing.T
+	label string
+}
+
+func (l approvedHopListener) Accept() (net.Conn, error) {
+	conn, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return approvedHopConn{Conn: conn, t: l.t, label: l.label}, nil
+}
+
+type approvedHopConn struct {
+	net.Conn
+	t     *testing.T
+	label string
+}
+
+func (c approvedHopConn) Read(b []byte) (int, error) {
+	n, err := c.Conn.Read(b)
+	var timeout net.Error
+	if errors.As(err, &timeout) && timeout.Timeout() {
+		c.t.Logf("fixed %s socket read timed out", c.label)
+	}
+	return n, err
 }
