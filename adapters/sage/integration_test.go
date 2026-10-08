@@ -21,6 +21,9 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"errors"
+	"net"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -535,22 +538,33 @@ func TestEndToEnd_AdapterMessageTransmission(t *testing.T) {
 		return nil, nil
 	}
 
-	// Start receiver server
-	server := NewNetworkServer(":18082", handler)
+	// Own one ephemeral loopback listener; other package tests use fixed ports.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := NewNetworkServer(listener.Addr().String(), handler)
+	done := make(chan error, 1)
 	go func() {
-		if err := server.Start(); err != nil && err.Error() != "http: Server closed" {
-			t.Logf("Server error: %v", err)
-		}
+		done <- server.httpServer.Serve(listener)
 	}()
-
-	// Wait for server to start
-	time.Sleep(100 * time.Millisecond)
 
 	// Ensure server cleanup
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		server.Stop(ctx)
+		if err := server.Stop(ctx); err != nil {
+			t.Errorf("server shutdown: %v", err)
+			_ = server.httpServer.Close()
+		}
+		select {
+		case err := <-done:
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				t.Errorf("server lifecycle: %v", err)
+			}
+		case <-ctx.Done():
+			t.Error("server did not stop within its cleanup deadline")
+		}
 	}()
 
 	// Create sender adapter
@@ -567,7 +581,7 @@ func TestEndToEnd_AdapterMessageTransmission(t *testing.T) {
 	}
 
 	// Set remote endpoint
-	senderAdapter.SetRemoteEndpoint("http://localhost:18082/sage/message")
+	senderAdapter.SetRemoteEndpoint("http://" + listener.Addr().String() + "/sage/message")
 
 	// Create test message
 	testMessage := types.NewMessage(
@@ -580,9 +594,6 @@ func TestEndToEnd_AdapterMessageTransmission(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SendMessage() failed: %v", err)
 	}
-
-	// Wait for message to be received
-	time.Sleep(100 * time.Millisecond)
 
 	// Verify message was received
 	mu.Lock()
