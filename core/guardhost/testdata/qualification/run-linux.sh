@@ -43,9 +43,8 @@ as 1005:1005 /srv/sq/bin/adk-approve sign -key /srv/sq/operator/seed -policy /sr
 sudo chmod 0755 /srv/sq/shared
 for h in receiver:1003:2002 caller:1004:2001; do
   name=${h%%:*}; owner=${h#*:}
-  sudo cp /srv/sq/shared/artifacts/* /srv/sq/$name/artifacts/
-  sudo chown "$owner" /srv/sq/$name/artifacts/*
-  sudo chmod 0600 /srv/sq/$name/artifacts/*
+  # Expand globs as root: the host artifact directories are mode 0700.
+  sudo sh -c "cp /srv/sq/shared/artifacts/* /srv/sq/$name/artifacts/ && chown $owner /srv/sq/$name/artifacts/* && chmod 0600 /srv/sq/$name/artifacts/*"
 done
 sudo tee /srv/sq/shared/receiver.json >/dev/null <<EOF
 {"State":"/srv/sq/receiver/state","Artifacts":"/srv/sq/receiver/artifacts","Shared":"/srv/sq/shared","Signer":"/srv/sq/sign-b/s","SignerUID":1002,"Approver":"$OP","KEM":"/srv/sq/receiver/kem","Address":"127.0.0.1:7443","Create":true,"Wait":"0s"}
