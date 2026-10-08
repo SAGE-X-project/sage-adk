@@ -165,7 +165,6 @@ func runNativeFixture(t *testing.T, mode string) {
 			return op
 		}
 		issuerOperation, receiverOperation := open(), (*b.Operation)(nil)
-		receiverPolicy = nil
 		if mode == "separate-receiver" {
 			receiverOperation, e = b.OpenReceiver(context.Background(), b.Config{Directory: directory, Policy: descriptor, Manifest: component, Limits: b.Limits{FileBytes: 4096, TotalBytes: 16384}, Factory: factory})
 			if e != nil {
