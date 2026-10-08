@@ -567,3 +567,6 @@ For complete details:
 **Built by the SAGE Team** 
 
 [Quick Start](#quick-start) | [Examples](examples/) | [Documentation](docs/)
+
+See [admitted hop capture](docs/admitted-hop-capture.md) for retaining authenticated
+upstream originals and applying independent downstream policy through native MCP.
