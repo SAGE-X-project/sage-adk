@@ -296,8 +296,9 @@ func receiver(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("receiver ready", c.Address)
+	fmt.Println("receiver ready", c.Address, time.Now().UTC().Format(time.RFC3339Nano))
 	served := host.Serve(ctx, l, 1)
+	fmt.Println("receiver serve returned", time.Now().UTC().Format(time.RFC3339Nano), served, "signal", ctx.Err())
 	closeCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err = errors.Join(host.Close(closeCtx), p.factory.Close(closeCtx)); err != nil {
@@ -329,7 +330,7 @@ func caller(args []string) error {
 		return fmt.Errorf("open caller: %w", err)
 	}
 	defer func() { _ = host.Close() }()
-	fmt.Println("caller opened; waiting", wait, "for the replay quarantine")
+	fmt.Println("caller opened; waiting", wait, "for the replay quarantine", time.Now().UTC().Format(time.RFC3339Nano))
 	time.Sleep(wait)
 	run := func(arguments string) ([]byte, error) {
 		conn, err := net.DialTimeout("tcp", c.Address, 3*time.Second)
