@@ -95,6 +95,13 @@ once and returns verified arithmetic output. Finished parent capture cannot open
 another operation or reach its loader. A foreign local issuer is refused before
 measurement/loading while the real parent is live.
 
+The approved-hop fixture samples one real elapsed monotonic origin shared by both
+native legs; concurrent polling does not double-advance injected time. Workers
+are bounded to thirty seconds and request/client/test lifetime to one minute to
+cover durable checks on race-enabled runners. No production timer, freshness
+rule, validation or successful-completion expectation is changed. Historical
+capture-only scenarios retain their original injected-clock configuration.
+
 Both downstream issuance and receiver bindings are co-located in this bounded
 fixture, and Registry/policy baseline provenance and loaded-runtime measurement
 remain synthetic. These tests are library integration evidence, not independent

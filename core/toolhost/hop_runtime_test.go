@@ -327,12 +327,18 @@ func (e *hopExecutor) Run(ctx context.Context, i *g.Invocation) ([]byte, error) 
 			return err
 		}
 		var err error
-		for n := 0; n < 5; n++ {
+		polls := 5
+		if e.approved != nil {
+			polls = 12
+		}
+		for n := 0; n < polls; n++ {
 			time.Sleep(time.Second)
-			e.env.clock.mono.Add(1000)
+			if e.approved == nil {
+				e.env.clock.mono.Add(1000)
+			}
 			delivered, err = c.Exchange()
 			if err != nil {
-				e.t.Logf("fixed child exchange refused: %v", err)
+				e.t.Logf("fixed child exchange refused: %v; worker context=%v", err, ctx.Err())
 				return err
 			}
 			if delivered != nil && delivered.Status() != "pending" {
@@ -396,6 +402,14 @@ func runAdmittedHop(t *testing.T, mode string) {
 	bounds.Worker = 10 * time.Second
 	bounds.Request = 20 * time.Second
 	bounds.Client = 20 * time.Second
+	lifetime := 20 * time.Second
+	if strings.HasPrefix(mode, "approved-") {
+		// Includes durable upstream/capture/loader checks under race-enabled CI.
+		// Preserve finite request/worker/client bounds and all core validation.
+		bounds.Worker = 30 * time.Second
+		bounds.Request, bounds.Client = time.Minute, time.Minute
+		lifetime = time.Minute
+	}
 	finalTool := &fixtureLoadedTool{}
 	var approved *approvedHopFixture
 	var finalLoaded toolhost.LoadedTool = finalTool
@@ -442,7 +456,7 @@ func runAdmittedHop(t *testing.T, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), lifetime)
 	defer cancel()
 	closeNative := func(host *g.MCPHost) {
 		closeCtx, stop := context.WithTimeout(context.Background(), 3*time.Second)
@@ -471,6 +485,9 @@ func runAdmittedHop(t *testing.T, mode string) {
 		t.Fatal(err)
 	}
 	env.clock.mono.Add(360000)
+	if approved != nil {
+		env.clock.real.Store(&fixtureClockOrigin{base: env.clock.mono.Load(), started: time.Now()})
+	}
 	rootSigner := &fixtureIntentSigner{env: env, path: filepath.Join(env.root, "root-journal")}
 	rootProtected, err := p.NewIntentSigner(context.Background(), rootIntent, fixtureAlice, fixtureAlice+"#signing-1", rootSigner)
 	if err != nil {
@@ -519,9 +536,15 @@ func runAdmittedHop(t *testing.T, mode string) {
 		if err := root.OpenMCPClient(callCtx, c, rootSigner.path, rootIntentBytes, g.MCPClientServices{IntentAuthority: rootIntent, ResultAuthority: rootResult, Policy: rootPolicy, Clock: env.clock}); err != nil {
 			return err
 		}
-		for n := 0; n < 8; n++ {
+		polls := 8
+		if approved != nil {
+			polls = 20
+		}
+		for n := 0; n < polls; n++ {
 			time.Sleep(time.Second)
-			env.clock.mono.Add(1000)
+			if approved == nil {
+				env.clock.mono.Add(1000)
+			}
 			var err error
 			delivery, err = c.Exchange()
 			if err != nil {

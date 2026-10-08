@@ -28,14 +28,28 @@ const fixtureAlice = "did:sage:web:agent.example:alice"
 const fixtureBob = "did:sage:web:agent.example:bob"
 const fixtureMaterial = "inert-arithmetic-instance/1"
 
-type fixtureClock struct{ mono atomic.Int64 }
+type fixtureClock struct {
+	mono atomic.Int64
+	real atomic.Pointer[fixtureClockOrigin]
+}
+type fixtureClockOrigin struct {
+	base    int64
+	started time.Time
+}
+
+func (c *fixtureClock) monotonic() int64 {
+	if origin := c.real.Load(); origin != nil {
+		return origin.base + time.Since(origin.started).Milliseconds()
+	}
+	return c.mono.Load()
+}
 
 func (c *fixtureClock) Now() (r.Stamp, error) {
-	m := c.mono.Load()
+	m := c.monotonic()
 	return r.Stamp{MonoMS: m, Unix: 100 + m/1000}, nil
 }
 func (c *fixtureClock) Sample(context.Context) (int64, int64, error) {
-	m := c.mono.Load()
+	m := c.monotonic()
 	return 100000 + m, m, nil
 }
 func fixtureHash(b []byte) string { s := sha256.Sum256(b); return hex.EncodeToString(s[:]) }

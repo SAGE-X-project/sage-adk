@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/sage-x-project/sage-adk/core/capture"
 	b "github.com/sage-x-project/sage-adk/core/guardbinding"
@@ -132,5 +133,25 @@ func (f *approvedHopFixture) Execute(ctx context.Context, args []byte) ([]byte, 
 func TestApprovedHopOperationNativeRuntime(t *testing.T) {
 	for _, mode := range []string{"approved-allowed", "approved-policy-denied", "approved-measurement-denied", "approved-retired", "approved-upstream-policy-loss"} {
 		t.Run(mode, func(t *testing.T) { runAdmittedHop(t, mode) })
+	}
+}
+
+// Both native legs sample one real monotonic origin instead of incrementing
+// the shared injected counter once per concurrent polling leg. UTC provenance
+// and Registry observations remain synthetic fixture providers.
+func TestApprovedHopClockUsesOneSharedOrigin(t *testing.T) {
+	clock := &fixtureClock{}
+	origin := &fixtureClockOrigin{base: 360000, started: time.Now().Add(-2 * time.Second)}
+	clock.real.Store(origin)
+	clock.mono.Store(999000) // Legacy manual advances must not inflate this origin.
+	before := origin.base + time.Since(origin.started).Milliseconds()
+	utc, mono, err := clock.Sample(context.Background())
+	after := origin.base + time.Since(origin.started).Milliseconds()
+	if err != nil || mono < before || mono > after || utc != 100000+mono {
+		t.Fatal("fixture sample did not use the shared elapsed origin")
+	}
+	stamp, err := clock.Now()
+	if err != nil || stamp.MonoMS < mono || stamp.Unix != 100+stamp.MonoMS/1000 {
+		t.Fatal("fixture Registry stamp changed its clock origin")
 	}
 }
