@@ -126,8 +126,8 @@ go test -mod=readonly -race -timeout 2m ./core/toolhost \
 (cd verification/library-consumer && go test -mod=readonly -race -timeout 1m ./...)
 ```
 
-The next step is a separate Inspector snapshot for this exact merged source
-revision, preserving the six historical catalogs/reports. Then continue actual
+The next step is a separate Inspector snapshot for both updated ADK and Go core
+source revisions, preserving the six historical catalogs/reports. Then continue actual
 authoritative blockchain Source and selected protected host/providers, followed
 by independent effect/deployment observation in the approved order. All thirteen
 deployed controls and independent hop execution remain `NOT_RUN`, and full
