@@ -94,7 +94,7 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.13.2
-          args: ./core/guardbinding ./core/guardcalculator ./core/guardimage ./core/guardchannel ./core/guardsigner ./cmd/adk-signer
+          args: ./core/guardbinding ./core/guardcalculator ./core/guardimage ./core/guardchannel ./core/guardsigner ./cmd/adk-signer ./core/guardapproval ./cmd/adk-approve
       - name: Lint changed capture and native hop files
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
