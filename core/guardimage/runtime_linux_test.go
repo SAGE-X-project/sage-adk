@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"golang.org/x/sys/unix"
 	"os"
 	"testing"
 	"time"
@@ -152,5 +153,52 @@ func TestSealedExecutableCleanupRetryRuntime(t *testing.T) {
 	}
 	if driver.image != nil || driver.pidfd != -1 || process.driver != nil {
 		t.Fatal("handles retained after successful cleanup")
+	}
+}
+
+// Unit-only interrupted-syscall schedules: no signals or external processes are
+// attacked. A retried poll must still reject exit and retain a fixed retry bound.
+func TestPidfdSignalInterruptionUnits(t *testing.T) {
+	for _, scenario := range []string{"resume-live", "resume-exited", "persistent-interruption", "other-error", "negative-descriptor"} {
+		t.Run(scenario, func(t *testing.T) {
+			calls := 0
+			fd := 17
+			if scenario == "negative-descriptor" {
+				fd = -1
+			}
+			live := pidfdLive(fd, func(fds []unix.PollFd, timeout int) (int, error) {
+				calls++
+				if len(fds) != 1 || fds[0].Fd != 17 || timeout != 0 {
+					t.Fatal("substituted descriptor or blocking poll")
+				}
+				if scenario == "other-error" {
+					return 0, unix.EBADF
+				}
+				if calls == 1 || scenario == "persistent-interruption" {
+					return 0, unix.EINTR
+				}
+				if scenario == "resume-exited" {
+					fds[0].Revents = unix.POLLIN
+					return 1, nil
+				}
+				return 0, nil
+			})
+			if live != (scenario == "resume-live") {
+				t.Fatal("incorrect lifetime after interruption")
+			}
+			expected := 2
+			if scenario == "persistent-interruption" {
+				expected = 3
+			}
+			if scenario == "other-error" {
+				expected = 1
+			}
+			if scenario == "negative-descriptor" {
+				expected = 0
+			}
+			if calls != expected {
+				t.Fatal("unbounded or incorrect retry count", calls)
+			}
+		})
 	}
 }

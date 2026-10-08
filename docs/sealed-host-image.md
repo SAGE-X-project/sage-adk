@@ -125,12 +125,14 @@ go test -mod=readonly -race -timeout 3m ./core/guardimage
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -mod=readonly -c ./core/guardimage
 ```
 
-Next, connect a protected child-to-supervisor measurement channel to the same
-child's native calculator gate, with exact instance/snapshot ownership, fresh
-observations, cancellation and denial on missing supervisor. Then assemble the
+The [child measurement channel](child-measurement-channel.md) now connects this
+observer to the same child calculator with mandatory additional child-local
+assurance, exact snapshot/connection ownership and denial on missing supervisor.
+It does not make backing-object observation into isolation or atomic admission.
+Continue assembly of the
 host's original capture, policy, custody, journals, final effects and authoritative
 blockchain Source. The existing Registry mapping obligations and later contract
-upgrade stage remain unchanged. Inspector's three historical ADK source reports
+upgrade stage remain unchanged. Inspector's four historical ADK source reports
 retain their pins; a new reviewed source snapshot is needed for this package.
 All thirteen deployed host controls and independent hop execution remain NOT_RUN;
 full conformance remains NOT_ESTABLISHED. This is implementation preparation in

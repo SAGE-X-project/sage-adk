@@ -134,3 +134,9 @@ for a restricted static Go profile. It is deliberately not a parent calculator's
 Measurement implementation. A protected bridge to the same measured child's native
 gate and actual deployment isolation remain required; the existing synthetic
 calculator measurement tests are not promoted to deployed evidence.
+
+The [child measurement channel](child-measurement-channel.md) connects the sealed
+observer to this adapter in the same child, with mandatory additional protected
+child-local assurance. The fixed native runtime fixture verifies this library
+path; production isolation/Source binding and Inspector deployment evidence
+remain outstanding. It cannot authorize a parent calculator from a child image.

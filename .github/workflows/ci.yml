@@ -74,10 +74,10 @@ jobs:
         with:
           go-version: '1.26.8'
           cache-dependency-path: go.sum
-      - name: Verify and observe the actual sealed host image
+      - name: Verify sealed image and measured native child
         run: |
           test "$(go env GOARCH)" = arm64
-          go test -mod=readonly -race -timeout 3m -v ./core/guardimage
+          go test -mod=readonly -race -timeout 3m -v ./core/guardimage ./core/guardchannel
 
   approved-operation-lint:
     name: Approved operation lint
@@ -92,4 +92,4 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.13.2
-          args: ./core/guardbinding ./core/guardcalculator ./core/guardimage
+          args: ./core/guardbinding ./core/guardcalculator ./core/guardimage ./core/guardchannel
