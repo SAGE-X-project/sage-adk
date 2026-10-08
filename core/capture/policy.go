@@ -6,13 +6,19 @@ import (
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 )
 
+type retainedInput interface {
+	ID() string
+	Digest() string
+	Inputs(context.Context) ([][]byte, error)
+}
+
 type boundPolicy struct {
-	request  *Request
+	request  retainedInput
 	delegate g.IntentPolicy
 }
 
 func (p *boundPolicy) Bindings(ctx context.Context, issuer, id string) (string, []byte, []byte, error) {
-	if id != p.request.id {
+	if id != p.request.ID() {
 		return "", nil, nil, ErrCapture
 	}
 	if _, e := p.request.Inputs(ctx); e != nil {
@@ -22,7 +28,7 @@ func (p *boundPolicy) Bindings(ctx context.Context, issuer, id string) (string, 
 	if e != nil {
 		return "", nil, nil, e
 	}
-	if _, e = p.request.Inputs(ctx); e != nil || d != p.request.digest {
+	if _, e = p.request.Inputs(ctx); e != nil || d != p.request.Digest() {
 		return "", nil, nil, ErrCapture
 	}
 	return d, policy, manifest, nil
@@ -55,7 +61,7 @@ func (p *boundIssuancePolicy) ApproveIntent(ctx context.Context, raw []byte) err
 }
 
 type boundSigner struct {
-	request  *Request
+	request  retainedInput
 	delegate g.IntentSigner
 }
 
