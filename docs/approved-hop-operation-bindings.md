@@ -79,6 +79,11 @@ a fresh call ID. RestoreHop requires the same actually live parent separately.
 
 ## Verification
 
+This integration pins Go core
+`f1a840bbc9c717564bd035e19c73f437a61e4a00`, which shares an ordered local
+clock history between native timer sampling and protocol validation. Its unit
+scenarios distinguish normal concurrent progress from actual clock rollback.
+
 Scenario units test nil/zero public hop capabilities, exact parent matching,
 root/hop separation, local issuer mismatch and each independently fixed identity,
 key, commitment, tool, arguments and profile field. Existing artifact, loader,
@@ -101,8 +106,11 @@ are bounded to thirty seconds and request/client/test lifetime to one minute to
 cover durable checks on race-enabled runners. Setup/frame waits use a finite
 ten-second budget because the core applies connection Timeout to frame IO too.
 Nonsecret listener diagnostics record timeouts without reading frame contents.
-No production timer, freshness
-rule, validation or successful-completion expectation is changed. Historical
+Production deadline budgets, freshness rules, cryptographic validation and
+successful-completion expectations remain unchanged. The pinned Go core orders
+native timer and protocol clock observations together so ordinary concurrent
+progress does not invalidate an earlier legitimate sample. Final observations
+still detect actual rollback and enforce current keys and freshness. Historical
 capture-only scenarios retain their original injected-clock configuration.
 
 Both downstream issuance and receiver bindings are co-located in this bounded
