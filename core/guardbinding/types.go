@@ -110,7 +110,8 @@ type retainedInput interface {
 	Inputs(context.Context) ([][]byte, error)
 }
 
-// Operation binds one protected root or admitted-hop capture to a fixed operation.
+// Operation binds one protected root or admitted-hop capture, or a separate
+// receiver's provisioned mapping (OpenReceiver), to a fixed operation.
 // Zero values are invalid. It exports no raw instance or Execute method. Close
 // permanently retires admission and serializes with the same final effect gate.
 // Administration still owns durable epochs and retirement across hosts/restarts.
@@ -120,6 +121,7 @@ type Operation struct {
 	closed                               bool
 	root                                 *os.Root
 	request                              retainedInput
+	receiver                             bool
 	parentID                             string
 	limits                               Limits
 	policy, manifest                     []byte

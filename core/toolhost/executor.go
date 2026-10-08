@@ -81,7 +81,7 @@ func (e *executor) Run(ctx context.Context, i *g.Invocation) (output []byte, err
 	if admission.Authorized(ctx, incoming) != nil {
 		return nil, ErrDenied
 	}
-	verified, err := g.VerifyIntent(ctx, incoming, e.recipient, e.authority, e.policy)
+	verified, err := g.VerifyReceivedIntent(ctx, incoming, e.recipient, e.authority, e.policy)
 	if err != nil || !bytes.Equal(verified.Canonical(), incoming) || verified.Digest() != i.IntentDigest() {
 		return nil, ErrDenied
 	}

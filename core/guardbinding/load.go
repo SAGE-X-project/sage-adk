@@ -39,7 +39,7 @@ func absent(v any) bool {
 // publishing an operation. The selected root must be protected local storage;
 // ordinary directory permissions do not establish attacker-resistant isolation.
 func Open(ctx context.Context, request *capture.Request, c Config) (*Operation, error) {
-	return open(ctx, request, c, "", "")
+	return open(ctx, request, c, "", "", false)
 }
 
 // OpenHop binds independent approved policy/artifacts and one immutable loader
@@ -65,10 +65,19 @@ func OpenHop(ctx context.Context, request *capture.HopRequest, c Config) (*Opera
 		!uuid.MatchString(request.ParentCallID()) || envelope.Intent.CallID != request.ParentCallID() {
 		return nil, ErrDenied
 	}
-	return open(ctx, request, c, request.ParentCallID(), envelope.Intent.Recipient)
+	return open(ctx, request, c, request.ParentCallID(), envelope.Intent.Recipient, false)
 }
 
-func open(ctx context.Context, request retainedInput, c Config, parent, issuer string) (operation *Operation, err error) {
+// OpenReceiver binds approved policy/artifacts and one immutable loader
+// instance at a receiver that does not hold the issuer's original request. The
+// result serves as a core ReceiverMapping for exactly the descriptor's issuer
+// and policy commitment and as the same-instance tool binding. It cannot
+// approve or issue intents. Wrap it with guard010.NewReceiverPolicy.
+func OpenReceiver(ctx context.Context, c Config) (*Operation, error) {
+	return open(ctx, nil, c, "", "", true)
+}
+
+func open(ctx context.Context, request retainedInput, c Config, parent, issuer string, receiver bool) (operation *Operation, err error) {
 	var root *os.Root
 	defer func() {
 		if recover() != nil {
@@ -79,11 +88,14 @@ func open(ctx context.Context, request retainedInput, c Config, parent, issuer s
 			_ = root.Close()
 		}
 	}()
-	if !active(ctx) || absent(request) || absent(c.Factory) || c.Limits.FileBytes < 1 || c.Limits.FileBytes > 64<<20 || c.Limits.TotalBytes < 1 || c.Limits.TotalBytes > 256<<20 {
+	// A receiver holds no original; every other operation requires one.
+	if !active(ctx) || receiver != absent(request) || (receiver && parent != "") || absent(c.Factory) || c.Limits.FileBytes < 1 || c.Limits.FileBytes > 64<<20 || c.Limits.TotalBytes < 1 || c.Limits.TotalBytes > 256<<20 {
 		return nil, ErrDenied
 	}
-	if _, e := request.Inputs(ctx); e != nil {
-		return nil, ErrDenied
+	if !receiver {
+		if _, e := request.Inputs(ctx); e != nil {
+			return nil, ErrDenied
+		}
 	}
 	policy, e := g.Canonicalize(c.Policy)
 	if e != nil {
@@ -128,7 +140,7 @@ func open(ctx context.Context, request retainedInput, c Config, parent, issuer s
 	if e != nil {
 		return nil, ErrDenied
 	}
-	o := &Operation{root: root, request: request, parentID: parent, limits: c.Limits, policy: policy, manifest: manifest, policyDigest: pd, manifestDigest: md, issuer: p.Issuer, gate: make(chan struct{}, 1)}
+	o := &Operation{root: root, request: request, receiver: receiver, parentID: parent, limits: c.Limits, policy: policy, manifest: manifest, policyDigest: pd, manifestDigest: md, issuer: p.Issuer, gate: make(chan struct{}, 1)}
 	o.gate <- struct{}{}
 	for path, digest := range entries {
 		o.entries = append(o.entries, file{path, digest})
@@ -147,7 +159,7 @@ func open(ctx context.Context, request retainedInput, c Config, parent, issuer s
 		}
 	}
 	snapshot := &Snapshot{artifacts: artifacts, policy: policy, manifest: manifest}
-	if _, e = request.Inputs(ctx); e != nil {
+	if o.retained(ctx) != nil {
 		return nil, ErrDenied
 	}
 	o.instance, e = c.Factory.Load(ctx, snapshot)
@@ -240,7 +252,7 @@ func (o *Operation) check(ctx context.Context) error {
 	if !active(ctx) {
 		return ErrDenied
 	}
-	if _, e := o.request.Inputs(ctx); e != nil {
+	if o.retained(ctx) != nil {
 		if active(ctx) {
 			o.retiring.Store(true)
 		}
@@ -266,13 +278,21 @@ func (o *Operation) check(ctx context.Context) error {
 		}
 		return ErrDenied
 	}
-	if _, e := o.request.Inputs(ctx); e != nil {
+	if o.retained(ctx) != nil {
 		if active(ctx) {
 			o.retiring.Store(true)
 		}
 		return ErrDenied
 	}
 	return nil
+}
+// retained rechecks the captured original; a receiver holds none.
+func (o *Operation) retained(ctx context.Context) error {
+	if o.receiver {
+		return nil
+	}
+	_, e := o.request.Inputs(ctx)
+	return e
 }
 func canonicalObject(raw []byte) ([]byte, error) {
 	b, e := g.Canonicalize(raw)
