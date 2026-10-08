@@ -15,6 +15,7 @@ import (
 var uuid = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 var _ g.IssuancePolicy = (*Operation)(nil)
 var _ g.IntentMeasurement = (*Operation)(nil)
+var _ g.ReceiverMapping = (*Operation)(nil)
 
 func (o *Operation) enter(ctx context.Context) error {
 	if o == nil || o.gate == nil || !active(ctx) || o.retiring.Load() {
@@ -55,10 +56,31 @@ func (o *Operation) Bindings(ctx context.Context, issuer, id string) (original s
 			err = ErrDenied
 		}
 	}()
-	if issuer != o.issuer || id != o.request.ID() || o.check(ctx) != nil {
+	if o.receiver || issuer != o.issuer || id != o.request.ID() || o.check(ctx) != nil {
 		return "", nil, nil, ErrDenied
 	}
 	return o.request.Digest(), append([]byte(nil), o.policy...), append([]byte(nil), o.manifest...), nil
+}
+
+// Approved returns copies of the provisioned descriptors for exactly the
+// approved issuer and policy commitment after current file and same-instance
+// checks. Only an OpenReceiver operation answers; capture-bound operations use
+// Bindings. A retired or closed operation refuses.
+func (o *Operation) Approved(ctx context.Context, issuer, policyDigest string) (policy, manifest []byte, err error) {
+	if e := o.enter(ctx); e != nil {
+		return nil, nil, e
+	}
+	defer o.leave()
+	defer func() {
+		if recover() != nil {
+			o.retiring.Store(true)
+			policy, manifest, err = nil, nil, ErrDenied
+		}
+	}()
+	if !o.receiver || issuer != o.issuer || policyDigest != o.policyDigest || o.check(ctx) != nil {
+		return nil, nil, ErrDenied
+	}
+	return append([]byte(nil), o.policy...), append([]byte(nil), o.manifest...), nil
 }
 func (o *Operation) permitted(issuer, tool string, args []byte) bool {
 	b, e := canonicalObject(args)
@@ -88,6 +110,9 @@ func (o *Operation) ApproveIntent(ctx context.Context, raw []byte) (err error) {
 	}
 	defer o.leave()
 	defer o.recover(&err)
+	if o.receiver {
+		return ErrDenied
+	}
 	b, e := canonicalObject(raw)
 	if e != nil {
 		return ErrDenied

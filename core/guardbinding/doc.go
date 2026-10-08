@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Package guardbinding binds an approved exact-operation policy, protected
 // root or actually admitted-hop capture and artifact snapshot to one trusted
-// loaded instance. Open and OpenHop are separate explicit entry points. It is
+// loaded instance. Open and OpenHop are separate explicit entry points.
+// OpenReceiver serves a receiver that holds no original request: it answers the
+// core ReceiverMapping for exactly its issuer and policy commitment and never
+// approves or issues intents. It is
 // native host assembly, not OS isolation or deployment attestation. Keep every
 // handle and provider outside model/plugin custody. Factory checks must attest
 // the actual policy evaluator, tool and dependencies; file hashes alone cannot.

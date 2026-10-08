@@ -33,7 +33,7 @@ func TestHopLocalPolicyDoesNotInheritRootApproval(t *testing.T) {
 	for _, mode := range []string{"allowed", "null-parent", "wrong-parent", "parent-type", "same-call", "issuer", "recipient", "keyid", "request_id", "original_digest", "policy_digest", "manifest_digest", "arguments", "tool", "profile", "version", "alg", "extra"} {
 		t.Run(mode, func(t *testing.T) {
 			e := environment(t)
-			o, err := open(context.Background(), e.request, e.config, testParent, alice)
+			o, err := open(context.Background(), e.request, e.config, testParent, alice, false)
 			must(t, err)
 			t.Cleanup(func() { must(t, o.Close(context.Background())) })
 			var fields map[string]any
@@ -69,7 +69,7 @@ func TestHopLocalPolicyDoesNotInheritRootApproval(t *testing.T) {
 		})
 	}
 	e := environment(t)
-	if o, err := open(context.Background(), e.request, e.config, testParent, bob); err == nil || o != nil {
+	if o, err := open(context.Background(), e.request, e.config, testParent, bob, false); err == nil || o != nil {
 		t.Fatal("policy issuer differed from authenticated local recipient")
 	}
 }

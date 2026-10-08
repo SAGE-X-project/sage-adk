@@ -29,11 +29,17 @@ func TestCompiledCalculatorNativeRuntime(t *testing.T) { runNativeFixture(t, "ca
 // All Alice/Bob signatures, including both transport endpoints, go through
 // guardsigner sockets; no endpoint receives a seed.
 func TestSignerCustodyNativeRuntime(t *testing.T) { runNativeFixture(t, "signer-custody") }
+
+// The receiver holds no capture of the issuer's original request. It verifies
+// through its provisioned (issuer, policy_digest) mapping, with every signature
+// coming from guardsigner sockets.
+func TestSeparateReceiverNativeRuntime(t *testing.T) { runNativeFixture(t, "separate-receiver") }
 func runNativeFixture(t *testing.T, mode string) {
 	t.Helper()
 	env := newFixtureEnvironment(t)
 	defer env.close(t)
-	if mode == "signer-custody" {
+	calculator := mode == "calculator-binding" || mode == "separate-receiver"
+	if mode == "signer-custody" || mode == "separate-receiver" {
 		env.useSigners(t)
 	}
 	store, err := capture.OpenFileStore(filepath.Join(env.root, "originals"))
@@ -110,7 +116,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	toolName := "sum"
 	proposalArguments := []byte(`{"a":2,"b":3}`)
 	expectedOutput := []byte(`{"sum":5}`)
-	if mode == "calculator-binding" {
+	if calculator {
 		toolName = "calculator"
 		proposalArguments = []byte(`{"a":2,"b":3,"operation":"add"}`)
 		expectedOutput = []byte(`{"output":5,"success":true}`)
@@ -158,8 +164,27 @@ func runNativeFixture(t *testing.T, mode string) {
 			})
 			return op
 		}
-		issuerOperation, receiverOperation := open(), open()
-		clientPolicy, receiverPolicy, measurement = issuerOperation, receiverOperation, issuerOperation
+		issuerOperation, receiverOperation := open(), (*b.Operation)(nil)
+		if mode == "separate-receiver" {
+			receiverOperation, e = b.OpenReceiver(context.Background(), b.Config{Directory: directory, Policy: descriptor, Manifest: component, Limits: b.Limits{FileBytes: 4096, TotalBytes: 16384}, Factory: factory})
+			if e != nil {
+				t.Fatal(e)
+			}
+			t.Cleanup(func() {
+				if e := receiverOperation.Close(context.Background()); e != nil {
+					t.Error(e)
+				}
+			})
+			mapped, e := g.NewReceiverPolicy(receiverOperation)
+			if e != nil {
+				t.Fatal(e)
+			}
+			receiverPolicy = mapped
+		} else {
+			receiverOperation = open()
+			receiverPolicy = receiverOperation
+		}
+		clientPolicy, measurement = issuerOperation, issuerOperation
 		binding, e := receiverOperation.Binding(context.Background())
 		if e != nil {
 			t.Fatal(e)
@@ -306,11 +331,11 @@ func runNativeFixture(t *testing.T, mode string) {
 	if !bytes.HasPrefix(after, before) {
 		t.Fatal("journal identity replaced")
 	}
-	if mode == "allowed" || mode == "signer-custody" || mode == "terminal" || mode == "approved-binding" || mode == "calculator-binding" {
-		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), expectedOutput) || (mode != "calculator-binding" && loaded.calls.Load() != 1) || (mode == "calculator-binding" && loaded.calls.Load() != 0) {
+	if mode == "allowed" || mode == "signer-custody" || mode == "terminal" || mode == "approved-binding" || calculator {
+		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), expectedOutput) || (!calculator && loaded.calls.Load() != 1) || (calculator && loaded.calls.Load() != 0) {
 			t.Fatalf("verified delivery/effect: %+v calls=%d", delivery, loaded.calls.Load())
 		}
-		if mode != "calculator-binding" {
+		if !calculator {
 			if args := <-loaded.seen; !bytes.Equal(args, proposalArguments) {
 				t.Fatal("arguments changed")
 			}
@@ -352,7 +377,7 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 	}
 	expected := "COMPLETED"
-	if mode != "allowed" && mode != "signer-custody" && mode != "terminal" && mode != "approved-binding" && mode != "calculator-binding" {
+	if mode != "allowed" && mode != "signer-custody" && mode != "terminal" && mode != "approved-binding" && !calculator {
 		expected = "UNKNOWN"
 	}
 	if last["state"] != expected {
