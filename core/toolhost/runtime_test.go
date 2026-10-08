@@ -25,10 +25,17 @@ import (
 func TestNativeGuardedToolRuntime(t *testing.T)        { runNativeFixture(t, "allowed") }
 func TestApprovedOperationNativeRuntime(t *testing.T)  { runNativeFixture(t, "approved-binding") }
 func TestCompiledCalculatorNativeRuntime(t *testing.T) { runNativeFixture(t, "calculator-binding") }
+
+// All Alice/Bob signatures, including both transport endpoints, go through
+// guardsigner sockets; no endpoint receives a seed.
+func TestSignerCustodyNativeRuntime(t *testing.T) { runNativeFixture(t, "signer-custody") }
 func runNativeFixture(t *testing.T, mode string) {
 	t.Helper()
 	env := newFixtureEnvironment(t)
 	defer env.close(t)
+	if mode == "signer-custody" {
+		env.useSigners(t)
+	}
 	store, err := capture.OpenFileStore(filepath.Join(env.root, "originals"))
 	if err != nil {
 		t.Fatal(err)
@@ -299,7 +306,7 @@ func runNativeFixture(t *testing.T, mode string) {
 	if !bytes.HasPrefix(after, before) {
 		t.Fatal("journal identity replaced")
 	}
-	if mode == "allowed" || mode == "terminal" || mode == "approved-binding" || mode == "calculator-binding" {
+	if mode == "allowed" || mode == "signer-custody" || mode == "terminal" || mode == "approved-binding" || mode == "calculator-binding" {
 		if delivery == nil || delivery.Status() != "completed" || !delivery.FirstTerminal() || !bytes.Equal(delivery.Output(), expectedOutput) || (mode != "calculator-binding" && loaded.calls.Load() != 1) || (mode == "calculator-binding" && loaded.calls.Load() != 0) {
 			t.Fatalf("verified delivery/effect: %+v calls=%d", delivery, loaded.calls.Load())
 		}
@@ -345,7 +352,7 @@ func runNativeFixture(t *testing.T, mode string) {
 		}
 	}
 	expected := "COMPLETED"
-	if mode != "allowed" && mode != "terminal" && mode != "approved-binding" && mode != "calculator-binding" {
+	if mode != "allowed" && mode != "signer-custody" && mode != "terminal" && mode != "approved-binding" && mode != "calculator-binding" {
 		expected = "UNKNOWN"
 	}
 	if last["state"] != expected {
