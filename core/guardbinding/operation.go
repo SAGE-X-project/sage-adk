@@ -61,6 +61,7 @@ func (o *Operation) Bindings(ctx context.Context, issuer, id string) (original s
 	}
 	return o.request.Digest(), append([]byte(nil), o.policy...), append([]byte(nil), o.manifest...), nil
 }
+
 // Approved returns copies of the provisioned descriptors for exactly the
 // approved issuer and policy commitment after current file and same-instance
 // checks. Only an OpenReceiver operation answers; capture-bound operations use

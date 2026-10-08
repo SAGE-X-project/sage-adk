@@ -286,6 +286,7 @@ func (o *Operation) check(ctx context.Context) error {
 	}
 	return nil
 }
+
 // retained rechecks the captured original; a receiver holds none.
 func (o *Operation) retained(ctx context.Context) error {
 	if o.receiver {
