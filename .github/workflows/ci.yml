@@ -45,7 +45,7 @@ jobs:
         run: go test -mod=readonly -race -timeout 10m ./...
       - name: Approved operation policy coverage
         run: |
-          go test -mod=readonly -race -coverprofile="$RUNNER_TEMP/approved-operation.cover" ./core/guardbinding
+          go test -mod=readonly -race -coverpkg=./core/guardbinding -coverprofile="$RUNNER_TEMP/approved-operation.cover" -timeout 2m ./core/guardbinding ./core/toolhost
           go tool cover -func="$RUNNER_TEMP/approved-operation.cover" | awk '/^total:/ { sub(/%$/, "", $3); found=1; if ($3+0 < 90) exit 1 } END { if (!found) exit 1 }'
       - name: Compiled calculator binding coverage
         run: |

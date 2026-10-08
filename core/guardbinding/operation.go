@@ -79,7 +79,7 @@ func (o *Operation) Authorize(ctx context.Context, issuer, tool string, args []b
 	return nil
 }
 
-// ApproveIntent checks every field of the canonical root intent against fixed
+// ApproveIntent checks every field of the canonical root or hop intent against fixed
 // capture, identity, key, commitments and arguments. Core issuance separately
 // checks fresh authority/time and owns one-use approval and durable fencing.
 func (o *Operation) ApproveIntent(ctx context.Context, raw []byte) (err error) {
@@ -109,10 +109,18 @@ func (o *Operation) ApproveIntent(ctx context.Context, raw []byte) (err error) {
 		return ErrDenied
 	}
 	n, e := base64.RawURLEncoding.Strict().DecodeString(nonce)
-	if e != nil || len(n) != 16 || !bytes.Equal(m["parent_call_id"], []byte("null")) || json.Unmarshal(m["created"], &created) != nil || json.Unmarshal(m["expires"], &expires) != nil || created < 0 || expires > 9007199254740991 || expires <= created || expires-created > o.rules.Lifetime || !o.permitted(o.issuer, o.rules.Tool, m["arguments"]) || o.check(ctx) != nil {
+	if e != nil || len(n) != 16 || !o.parentMatches(m["parent_call_id"], call) || json.Unmarshal(m["created"], &created) != nil || json.Unmarshal(m["expires"], &expires) != nil || created < 0 || expires > 9007199254740991 || expires <= created || expires-created > o.rules.Lifetime || !o.permitted(o.issuer, o.rules.Tool, m["arguments"]) || o.check(ctx) != nil {
 		return ErrDenied
 	}
 	return nil
+}
+
+func (o *Operation) parentMatches(raw []byte, call string) bool {
+	if o.parentID == "" {
+		return bytes.Equal(raw, []byte("null"))
+	}
+	var parent string
+	return json.Unmarshal(raw, &parent) == nil && parent == o.parentID && call != parent
 }
 
 // Check verifies the approved component name/digest and current captured input,

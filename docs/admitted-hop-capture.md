@@ -124,3 +124,9 @@ Source, selected protected host/isolation and independent deployment observation
 All thirteen deployed controls and independent hop execution remain `NOT_RUN`;
 full conformance remains `NOT_ESTABLISHED`. Preserve the approved order before
 later demos, contract upgrades and normative A2A/DID work.
+
+The separate [approved downstream operation binding](approved-hop-operation-bindings.md)
+now connects this retained capture to independent exact local policy, approved
+artifact checks and the same immutable loaded instance through `guardbinding.OpenHop`.
+`Open` remains root-only. Safe native calculator tests cover this connection;
+co-located fixture providers do not establish independent hop or deployment conformance.

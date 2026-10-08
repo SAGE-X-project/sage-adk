@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/sage-x-project/sage-adk/core/capture"
 	adkerrors "github.com/sage-x-project/sage-adk/pkg/errors"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 )
@@ -103,7 +102,15 @@ type rules struct {
 	Lifetime  int64
 }
 
-// Operation binds one protected Request to one fixed approved local operation.
+// retainedInput is private: only the explicit root/hop constructors accept
+// capture capabilities. External loaders cannot supply a replacement original.
+type retainedInput interface {
+	ID() string
+	Digest() string
+	Inputs(context.Context) ([][]byte, error)
+}
+
+// Operation binds one protected root or admitted-hop capture to a fixed operation.
 // Zero values are invalid. It exports no raw instance or Execute method. Close
 // permanently retires admission and serializes with the same final effect gate.
 // Administration still owns durable epochs and retirement across hosts/restarts.
@@ -112,7 +119,8 @@ type Operation struct {
 	retiring                             atomic.Bool
 	closed                               bool
 	root                                 *os.Root
-	request                              *capture.Request
+	request                              retainedInput
+	parentID                             string
 	limits                               Limits
 	policy, manifest                     []byte
 	policyDigest, manifestDigest, issuer string
