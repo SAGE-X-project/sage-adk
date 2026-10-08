@@ -12,6 +12,7 @@
 //	qualification setup    -dir DIR -alice HEX -bob HEX -kem HEX
 //	qualification receiver -config FILE
 //	qualification caller   -config FILE
+//	qualification clockwatch -for DURATION
 package main
 
 import (
@@ -63,6 +64,8 @@ func main() {
 		err = receiver(os.Args[2:])
 	case "caller":
 		err = caller(os.Args[2:])
+	case "clockwatch":
+		err = clockwatch(os.Args[2:])
 	default:
 		err = errors.New("unknown command")
 	}
@@ -74,6 +77,30 @@ func main() {
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "qualification:", err)
 	os.Exit(1)
+}
+
+// clockwatch samples the wall clock continuously and reports every backward
+// step. The host clock refuses any regression, so a stepping environment
+// cannot keep a protected host running.
+func clockwatch(args []string) error {
+	fs := flag.NewFlagSet("clockwatch", flag.ContinueOnError)
+	d := fs.Duration("for", time.Minute, "observation duration")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	start := time.Now()
+	last := start.UnixNano()
+	steps := 0
+	for time.Since(start) < *d {
+		now := time.Now().UnixNano()
+		if now < last {
+			steps++
+			fmt.Printf("clock backward %.3f ms at +%s\n", float64(last-now)/1e6, time.Since(start).Round(time.Millisecond))
+		}
+		last = now
+	}
+	fmt.Printf("clock observed %s backward-steps=%d\n", *d, steps)
+	return nil
 }
 
 // kemgen writes a private X25519 key readable only by this account.
