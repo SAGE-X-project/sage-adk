@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -19,6 +20,7 @@ import (
 
 	b "github.com/sage-x-project/sage-adk/core/guardbinding"
 	p "github.com/sage-x-project/sage-adk/core/guardservices"
+	"github.com/sage-x-project/sage-adk/core/guardsigner"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 	h "github.com/sage-x-project/sage/pkg/agent/hpke"
 	r "github.com/sage-x-project/sage/pkg/agent/registry010"
@@ -99,6 +101,51 @@ type fixtureEnvironment struct {
 	journals   []*r.Journal
 	replays    []*h.ReplayJournal010
 	counter    int
+	// Optional signer clients. When set, every Alice/Bob signature goes
+	// through a guardsigner socket instead of an in-process key.
+	aliceSigner, bobSigner *guardsigner.Client
+}
+
+// useSigners starts one signer server per identity on real Unix sockets.
+// Alice signs intents and transport envelopes; Bob signs results and
+// transport envelopes. Servers run in this test process; separate-account
+// operation is exercised by the adk-signer runtime tests.
+func (e *fixtureEnvironment) useSigners(t *testing.T) {
+	t.Helper()
+	dir, err := os.MkdirTemp("/tmp", "gsrt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	start := func(name string, key ed25519.PrivateKey, roles ...string) *guardsigner.Client {
+		s, err := guardsigner.NewServer(guardsigner.Config{Key: key, Roles: roles, AllowedUIDs: []uint32{uint32(os.Getuid())}, Timeout: 2 * time.Second, MaxConnections: 8})
+		if err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join(dir, name)
+		l, err := net.ListenUnix("unix", &net.UnixAddr{Name: path, Net: "unix"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan error, 1)
+		go func() { done <- s.Serve(ctx, l) }()
+		t.Cleanup(func() { cancel(); <-done; s.Close() })
+		c, err := guardsigner.NewClient(path, uint32(os.Getuid()), 2*time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return c
+	}
+	e.aliceSigner = start("a", e.alice, "intent", "transport")
+	e.bobSigner = start("b", e.bob, "result", "transport")
+	// Keep only the public halves locally. The servers hold copies, so any
+	// remaining in-process signing path now produces invalid signatures.
+	e.alice, e.bob = publicOnly(e.alice), publicOnly(e.bob)
+}
+
+func publicOnly(k ed25519.PrivateKey) ed25519.PrivateKey {
+	return append(make(ed25519.PrivateKey, ed25519.SeedSize), k.Public().(ed25519.PublicKey)...)
 }
 
 func newFixtureEnvironment(t *testing.T) *fixtureEnvironment {
@@ -153,11 +200,22 @@ func (e *fixtureEnvironment) endpoint(t *testing.T, client bool) *h.CompletionEn
 		t.Fatal(err)
 	}
 	e.replays = append(e.replays, replay)
-	endpoint, err := h.NewCompletionEndpoint010(did, did+"#signing-1", key.Seed(), kem, e.gate(t), e.clock, replay)
+	var endpoint *h.CompletionEndpoint010
+	if custody := e.signerFor(client); custody != nil {
+		endpoint, err = h.NewCustodyCompletionEndpoint010(context.Background(), did, did+"#signing-1", custody, kem, e.gate(t), e.clock, replay)
+	} else {
+		endpoint, err = h.NewCompletionEndpoint010(did, did+"#signing-1", key.Seed(), kem, e.gate(t), e.clock, replay)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
 	return endpoint
+}
+func (e *fixtureEnvironment) signerFor(client bool) *guardsigner.Client {
+	if client {
+		return e.aliceSigner
+	}
+	return e.bobSigner
 }
 func (e *fixtureEnvironment) close(t *testing.T) {
 	t.Helper()
@@ -268,7 +326,11 @@ func (s fixtureResultBackend) Sign(ctx context.Context, b []byte) ([]byte, error
 }
 func (e *fixtureEnvironment) resultSigner(t *testing.T, a *g.RegistryAuthority) *p.ResultSigner {
 	t.Helper()
-	signer, err := p.NewResultSigner(context.Background(), a, fixtureBob, fixtureBob+"#signing-1", fixtureResultBackend{e})
+	var backend p.Ed25519Backend = fixtureResultBackend{e}
+	if e.bobSigner != nil {
+		backend = e.bobSigner
+	}
+	signer, err := p.NewResultSigner(context.Background(), a, fixtureBob, fixtureBob+"#signing-1", backend)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,6 +360,9 @@ func (s *fixtureIntentSigner) Sign(ctx context.Context, b []byte) ([]byte, error
 		return nil, g.ErrInvalid
 	}
 	s.calls.Add(1)
+	if s.env.aliceSigner != nil {
+		return s.env.aliceSigner.Sign(ctx, b)
+	}
 	return ed25519.Sign(s.env.alice, b), nil
 }
 
