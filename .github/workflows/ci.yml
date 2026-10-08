@@ -43,6 +43,9 @@ jobs:
           go vet -mod=readonly ./...
       - name: Unit and safe loopback tests
         run: go test -mod=readonly -race -timeout 10m ./...
+      - name: Diagnose fixed native hop refusals
+        if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
+        run: python3 scripts/trace-native-hop.py
       - name: Approved operation policy coverage
         run: |
           go test -mod=readonly -race -coverpkg=./core/guardbinding -coverprofile="$RUNNER_TEMP/approved-operation.cover" -timeout 2m ./core/guardbinding ./core/toolhost
