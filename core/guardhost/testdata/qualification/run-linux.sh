@@ -55,7 +55,7 @@ sudo tee /srv/sq/shared/caller.json >/dev/null <<EOF
 EOF
 
 log "signers"
-as 1001:2001 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-a/seed -socket /srv/sq/sign-a/s -allow-uid 1004 -roles intent,result,transport > /tmp/sq-signer-a.out 2>&1 &
+as 1001:2001 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-a/seed -socket /srv/sq/sign-a/s -allow-uid 1004 -roles intent,transport > /tmp/sq-signer-a.out 2>&1 &
 as 1002:2002 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-b/seed -kem-key /srv/sq/signer-b/kem -socket /srv/sq/sign-b/s -allow-uid 1003 -roles result,transport,kem > /tmp/sq-signer-b.out 2>&1 &
 sleep 2
 cat /tmp/sq-signer-a.out /tmp/sq-signer-b.out | tee -a "$LOG"

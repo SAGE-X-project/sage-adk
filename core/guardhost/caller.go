@@ -18,17 +18,16 @@ import (
 )
 
 // CallerConfig assembles a root issuer host. Intent is the custody for this
-// identity's intent signatures. The core MCP host also requires this host's
-// own receiver services; they use this identity and the same approved
-// operation, whose rules name only Recipient, so the host issues no call to
-// itself.
+// identity's intent signatures and Identity.Transport for its handshakes. A
+// caller opens an initiator-only core host, receives no calls and signs no
+// results, so Identity.Result must be nil.
 type CallerConfig struct {
 	Environment
 	Identity
 	Intent                  h.Ed25519Custody010
 	Recipient, RecipientKey string
 	Approved
-	Bounds     g.MCPHostBounds
+	Bounds     g.MCPClientHostBounds
 	Connection g.MCPConnectionConfig
 }
 
@@ -36,21 +35,19 @@ type CallerConfig struct {
 // new replay journal stays in its 360-second quarantine after OpenCaller;
 // calls made earlier fail closed.
 type Caller struct {
-	config     CallerConfig
-	state      *state
-	store      *capture.FileStore
-	capturer   *capture.Host
-	endpoint   func(context.Context) (*h.CompletionEndpoint010, error)
-	intent     *g.RegistryAuthority
-	peer       *g.RegistryAuthority
-	own        *g.RegistryAuthority
-	signer     *p.IntentSigner
-	ownResults *p.ResultSigner
+	config   CallerConfig
+	state    *state
+	store    *capture.FileStore
+	capturer *capture.Host
+	endpoint func(context.Context) (*h.CompletionEndpoint010, error)
+	intent   *g.RegistryAuthority
+	peer     *g.RegistryAuthority
+	signer   *p.IntentSigner
 }
 
 // OpenCaller records the operator approval and opens persistent caller state.
 func OpenCaller(ctx context.Context, c CallerConfig) (caller *Caller, err error) {
-	if !active(ctx) || !c.Environment.valid() || !c.Identity.valid() || absent(c.Intent) || c.Recipient == "" || c.RecipientKey == "" || c.Connection.Role != g.MCPInitiator || c.Connection.Recipient != c.Recipient || c.Connection.RecipientKey != c.RecipientKey {
+	if !active(ctx) || !c.Environment.valid() || c.DID == "" || c.KeyID == "" || absent(c.Transport) || !absent(c.Result) || absent(c.Intent) || c.Recipient == "" || c.RecipientKey == "" || c.Connection.Role != g.MCPInitiator || c.Connection.Recipient != c.Recipient || c.Connection.RecipientKey != c.RecipientKey {
 		return nil, ErrDenied
 	}
 	s := &state{env: c.Environment}
@@ -79,13 +76,7 @@ func OpenCaller(ctx context.Context, c CallerConfig) (caller *Caller, err error)
 	if cl.peer, err = s.authority("result", c.Recipient, c.RecipientKey); err != nil {
 		return nil, err
 	}
-	if cl.own, err = s.authority("own-result", c.DID, c.KeyID); err != nil {
-		return nil, err
-	}
 	if cl.signer, err = p.NewIntentSigner(ctx, cl.intent, c.DID, c.KeyID, c.Intent); err != nil {
-		return nil, ErrDenied
-	}
-	if cl.ownResults, err = p.NewResultSigner(ctx, cl.own, c.DID, c.KeyID, c.Result); err != nil {
 		return nil, ErrDenied
 	}
 	if cl.endpoint, err = s.transport(c.Identity, nil); err != nil {
@@ -131,12 +122,7 @@ func (c *Caller) Call(ctx context.Context, inputs [][]byte, proposal g.IntentPro
 		_ = conn.Close()
 		return nil, err
 	}
-	binding, err := operation.Binding(ctx)
-	if err != nil {
-		_ = conn.Close()
-		return nil, ErrDenied
-	}
-	host, err := toolhost.Open(c.state.path("client-"+request.ID()), true, c.config.DID, toolhost.Services{IntentAuthority: c.intent, ResultAuthority: c.own, Policy: operation, Signer: c.ownResults, Clock: c.config.Clock}, []toolhost.Binding{binding}, c.config.Bounds)
+	host, err := toolhost.OpenClient(c.config.Clock, c.config.Bounds)
 	if err != nil {
 		_ = conn.Close()
 		return nil, ErrDenied
