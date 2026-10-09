@@ -6,6 +6,7 @@ package guardsigner
 import (
 	"bytes"
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/binary"
@@ -302,5 +303,87 @@ func TestFrameRoundTrip(t *testing.T) {
 	}
 	if writeFrame(io.Discard, opSign, make([]byte, maxMessage+1)) == nil {
 		t.Fatal("oversized frame written")
+	}
+}
+
+func kemKey(t *testing.T) *ecdh.PrivateKey {
+	t.Helper()
+	k, err := ecdh.X25519().GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// The kem role performs X25519 agreement for allowlisted peers and never
+// returns the private key; without the role the same server refuses it.
+func TestKEMRoleAgreementAndRefusals(t *testing.T) {
+	k := kemKey(t)
+	c := config(testKey(t), "transport", "kem")
+	c.KEM = k.Bytes()
+	_, path := start(t, c)
+	kem := client(t, path).KEM()
+	ctx := context.Background()
+	pub, err := kem.PublicKey(ctx)
+	if err != nil || !bytes.Equal(pub, k.PublicKey().Bytes()) {
+		t.Fatal("kem public key", err)
+	}
+	peer := kemKey(t)
+	shared, err := kem.ECDH(ctx, peer.PublicKey().Bytes())
+	want, _ := peer.ECDH(k.PublicKey())
+	if err != nil || !bytes.Equal(shared, want) {
+		t.Fatal("shared value", err)
+	}
+	for name, p := range map[string][]byte{"low-order": make([]byte, 32), "short": make([]byte, 31), "empty": nil} {
+		if out, err := kem.ECDH(ctx, p); err == nil || out != nil {
+			t.Fatalf("%s peer accepted", name)
+		}
+	}
+	_, plain := start(t, config(testKey(t), "transport"))
+	if out, err := client(t, plain).KEM().ECDH(ctx, peer.PublicKey().Bytes()); err == nil || out != nil {
+		t.Fatal("server without the kem role agreed")
+	}
+	if _, err := client(t, plain).KEM().PublicKey(ctx); err == nil {
+		t.Fatal("server without the kem role returned a KEM key")
+	}
+	var none *KEMClient
+	if _, err := none.ECDH(ctx, peer.PublicKey().Bytes()); err == nil {
+		t.Fatal("nil KEM client")
+	}
+	for name, cfg := range map[string]Config{
+		"role-without-key": config(testKey(t), "kem"),
+		"key-without-role": {Key: testKey(t), KEM: k.Bytes(), Roles: []string{"transport"}, AllowedUIDs: []uint32{1}, Timeout: time.Second, MaxConnections: 1},
+		"short-key":        {Key: testKey(t), KEM: make([]byte, 31), Roles: []string{"kem"}, AllowedUIDs: []uint32{1}, Timeout: time.Second, MaxConnections: 1},
+		"duplicate-kem":    {Key: testKey(t), KEM: k.Bytes(), Roles: []string{"kem", "kem"}, AllowedUIDs: []uint32{1}, Timeout: time.Second, MaxConnections: 1},
+	} {
+		if s, err := NewServer(cfg); err == nil || s != nil {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+}
+
+func TestKEMKeyFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "kem")
+	pub, err := GenerateKEMFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := LoadKEMFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	k, err := ecdh.X25519().NewPrivateKey(raw)
+	if err != nil || !bytes.Equal(k.PublicKey().Bytes(), pub) {
+		t.Fatal("reload", err)
+	}
+	if _, err = GenerateKEMFile(path); err == nil {
+		t.Fatal("existing kem key overwritten")
+	}
+	if err = os.Chmod(path, 0440); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = LoadKEMFile(path); err == nil {
+		t.Fatal("group-readable kem key accepted")
 	}
 }

@@ -16,12 +16,12 @@ import (
 
 // ReceiverConfig assembles a separate tool host. It holds no original request:
 // the operation is bound with guardbinding.OpenReceiver and verified through
-// the provisioned (issuer, policy_digest) mapping. KEM is the local X25519
-// private key registered for this identity; it is not held by custody.
+// the provisioned (issuer, policy_digest) mapping. KEM is custody for the
+// X25519 key registered for this identity; the host holds no private key.
 type ReceiverConfig struct {
 	Environment
 	Identity
-	KEM               []byte
+	KEM               h.X25519Custody010
 	Issuer, IssuerKey string
 	Approved
 	Bounds     g.MCPHostBounds
@@ -33,7 +33,6 @@ type Receiver struct {
 	state      *state
 	operation  *b.Operation
 	endpoint   func(context.Context) (*h.CompletionEndpoint010, error)
-	kem        []byte
 	host       *toolhost.Host
 	connection g.MCPConnectionConfig
 }
@@ -41,7 +40,7 @@ type Receiver struct {
 // OpenReceiver records the operator approval, binds the approved operation and
 // opens the native host. Any missing port or refused check fails closed.
 func OpenReceiver(ctx context.Context, c ReceiverConfig) (receiver *Receiver, err error) {
-	if !active(ctx) || !c.Environment.valid() || !c.Identity.valid() || len(c.KEM) != 32 || c.Issuer == "" || c.IssuerKey == "" || c.Connection.Role != g.MCPResponder {
+	if !active(ctx) || !c.Environment.valid() || !c.Identity.valid() || absent(c.KEM) || c.Issuer == "" || c.IssuerKey == "" || c.Connection.Role != g.MCPResponder {
 		return nil, ErrDenied
 	}
 	s := &state{env: c.Environment}
@@ -81,8 +80,7 @@ func OpenReceiver(ctx context.Context, c ReceiverConfig) (receiver *Receiver, er
 	if err != nil {
 		return nil, ErrDenied
 	}
-	rcv.kem = append([]byte(nil), c.KEM...)
-	if rcv.endpoint, err = s.transport(c.Identity, rcv.kem); err != nil {
+	if rcv.endpoint, err = s.transport(c.Identity, c.KEM); err != nil {
 		return nil, err
 	}
 	rcv.host, err = toolhost.Open(s.path("ledger"), c.Create, c.DID, toolhost.Services{IntentAuthority: intent, ResultAuthority: result, Policy: policy, Signer: signer, Clock: c.Clock}, []toolhost.Binding{binding}, c.Bounds)
@@ -107,7 +105,7 @@ func (r *Receiver) Serve(ctx context.Context, l net.Listener, workers int) error
 	}})
 }
 
-// Close retires the host, the operation, the local KEM copy and the journals. On a
+// Close retires the host, the operation and the journals. On a
 // timeout it keeps ownership; call again with a fresh context.
 func (r *Receiver) Close(ctx context.Context) error {
 	if r == nil {
@@ -126,9 +124,6 @@ func (r *Receiver) Close(ctx context.Context) error {
 		r.operation = nil
 	}
 	r.endpoint = nil
-	for i := range r.kem {
-		r.kem[i] = 0
-	}
 	if r.state != nil {
 		return r.state.close()
 	}

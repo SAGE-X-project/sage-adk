@@ -146,14 +146,15 @@ func newWorld(t *testing.T) *world {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
-	w.aliceSigner = serveSigner(t, filepath.Join(dir, "a"), w.aliceKey, "intent", "result", "transport")
-	w.bobSigner = serveSigner(t, filepath.Join(dir, "b"), w.bobKey, "result", "transport")
+	w.aliceSigner = serveSigner(t, filepath.Join(dir, "a"), w.aliceKey, nil, "intent", "result", "transport")
+	// Bob's signer also holds his X25519 KEM key; the receiver holds no key.
+	w.bobSigner = serveSigner(t, filepath.Join(dir, "b"), w.bobKey, w.kemPrivate, "result", "transport", "kem")
 	return w
 }
 
-func serveSigner(t *testing.T, path string, key ed25519.PrivateKey, roles ...string) *guardsigner.Client {
+func serveSigner(t *testing.T, path string, key ed25519.PrivateKey, kem []byte, roles ...string) *guardsigner.Client {
 	t.Helper()
-	s, err := guardsigner.NewServer(guardsigner.Config{Key: key, Roles: roles, AllowedUIDs: []uint32{uint32(os.Getuid())}, Timeout: 2 * time.Second, MaxConnections: 8})
+	s, err := guardsigner.NewServer(guardsigner.Config{Key: key, KEM: kem, Roles: roles, AllowedUIDs: []uint32{uint32(os.Getuid())}, Timeout: 2 * time.Second, MaxConnections: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +215,7 @@ func (w *world) env(dir string) guardhost.Environment {
 
 func (w *world) receiverConfig(t *testing.T) guardhost.ReceiverConfig {
 	state, artifacts := w.hostDir(t)
-	return guardhost.ReceiverConfig{Environment: w.env(state), Identity: guardhost.Identity{DID: bob, KeyID: bob + "#signing-1", Transport: w.bobSigner, Result: w.bobSigner}, KEM: w.kemPrivate, Issuer: alice, IssuerKey: alice + "#signing-1", Approved: w.approved(t, artifacts, 1), Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPResponder, Name: "adk guarded receiver", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}}
+	return guardhost.ReceiverConfig{Environment: w.env(state), Identity: guardhost.Identity{DID: bob, KeyID: bob + "#signing-1", Transport: w.bobSigner, Result: w.bobSigner}, KEM: w.bobSigner.KEM(), Issuer: alice, IssuerKey: alice + "#signing-1", Approved: w.approved(t, artifacts, 1), Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPResponder, Name: "adk guarded receiver", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}}
 }
 
 func (w *world) callerConfig(t *testing.T) guardhost.CallerConfig {

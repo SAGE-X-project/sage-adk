@@ -4,6 +4,7 @@
 package guardsigner
 
 import (
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
 	"io"
@@ -20,23 +21,69 @@ func GenerateKeyFile(path string) (ed25519.PublicKey, error) {
 		return nil, ErrDenied
 	}
 	defer zero(private)
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0400)
+	if err = writePrivate(path, private.Seed()); err != nil {
+		return nil, err
+	}
+	return public, nil
+}
+
+// GenerateKEMFile creates a new 32-byte X25519 private key file readable only
+// by the current account. It never overwrites and returns the public key.
+func GenerateKEMFile(path string) ([]byte, error) {
+	k, err := ecdh.X25519().GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, ErrDenied
 	}
-	_, writeErr := f.Write(private.Seed())
+	private := k.Bytes()
+	defer zero(private)
+	if err = writePrivate(path, private); err != nil {
+		return nil, err
+	}
+	return k.PublicKey().Bytes(), nil
+}
+
+// LoadKEMFile reads a key created by GenerateKEMFile with the same file checks
+// as LoadKeyFile. The caller owns and should erase the returned bytes.
+func LoadKEMFile(path string) ([]byte, error) {
+	raw, err := readPrivate(path)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = ecdh.X25519().NewPrivateKey(raw); err != nil {
+		zero(raw)
+		return nil, ErrDenied
+	}
+	return raw, nil
+}
+
+func writePrivate(path string, data []byte) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0400)
+	if err != nil {
+		return ErrDenied
+	}
+	_, writeErr := f.Write(data)
 	syncErr := f.Sync()
 	closeErr := f.Close()
 	if writeErr != nil || syncErr != nil || closeErr != nil {
 		_ = os.Remove(path)
-		return nil, ErrDenied
+		return ErrDenied
 	}
-	return public, nil
+	return nil
 }
 
 // LoadKeyFile reads a seed file created by GenerateKeyFile. The file must be a
 // regular file owned by the current account with no group or other access.
 func LoadKeyFile(path string) (ed25519.PrivateKey, error) {
+	seed, err := readPrivate(path)
+	if err != nil {
+		return nil, err
+	}
+	defer zero(seed)
+	return ed25519.NewKeyFromSeed(seed), nil
+}
+
+// readPrivate returns the 32 bytes of a private regular key file.
+func readPrivate(path string) ([]byte, error) {
 	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 	if err != nil {
 		return nil, ErrDenied
@@ -50,12 +97,12 @@ func LoadKeyFile(path string) (ed25519.PrivateKey, error) {
 	if !ok || st.Uid != uint32(os.Getuid()) {
 		return nil, ErrDenied
 	}
-	seed := make([]byte, ed25519.SeedSize)
-	defer zero(seed)
-	if _, err = io.ReadFull(f, seed); err != nil {
+	raw := make([]byte, ed25519.SeedSize)
+	if _, err = io.ReadFull(f, raw); err != nil {
+		zero(raw)
 		return nil, ErrDenied
 	}
-	return ed25519.NewKeyFromSeed(seed), nil
+	return raw, nil
 }
 
 func zero(b []byte) {

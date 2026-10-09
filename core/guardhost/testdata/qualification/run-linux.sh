@@ -2,7 +2,8 @@
 # Separate-account qualification on a Linux host with passwordless sudo.
 # Usage: run-linux.sh BIN_DIR LOG_FILE
 # BIN_DIR holds adk-signer, adk-approve and qualification for this host.
-# Accounts (uid:gid): signer-a 1001:2001, signer-b 1002:2002, receiver
+# Accounts (uid:gid): signer-a 1001:2001, signer-b 1002:2002 (also holds
+# the receiver's X25519 KEM key), receiver
 # 1003:2002, caller 1004:2001, operator 1005:1005. Test-only: the Registry
 # Source and calculator measurement are synthetic fixtures.
 set -eu
@@ -34,7 +35,7 @@ CLOCK=$!
 A=$(as 1001:1001 /srv/sq/bin/adk-signer keygen -key /srv/sq/signer-a/seed)
 B=$(as 1002:1002 /srv/sq/bin/adk-signer keygen -key /srv/sq/signer-b/seed)
 OP=$(as 1005:1005 /srv/sq/bin/adk-approve keygen -key /srv/sq/operator/seed)
-KEM=$(as 1003:2002 "$Q" kemgen -key /srv/sq/receiver/kem)
+KEM=$(as 1002:1002 /srv/sq/bin/adk-signer kemgen -key /srv/sq/signer-b/kem)
 log "alice=$A bob=$B operator=$OP kem=$KEM"
 
 sudo "$Q" setup -dir /srv/sq/shared -alice "$A" -bob "$B" -kem "$KEM" | tee -a "$LOG"
@@ -47,7 +48,7 @@ for h in receiver:1003:2002 caller:1004:2001; do
   sudo sh -c "cp /srv/sq/shared/artifacts/* /srv/sq/$name/artifacts/ && chown $owner /srv/sq/$name/artifacts/* && chmod 0600 /srv/sq/$name/artifacts/*"
 done
 sudo tee /srv/sq/shared/receiver.json >/dev/null <<EOF
-{"State":"/srv/sq/receiver/state","Artifacts":"/srv/sq/receiver/artifacts","Shared":"/srv/sq/shared","Signer":"/srv/sq/sign-b/s","SignerUID":1002,"Approver":"$OP","KEM":"/srv/sq/receiver/kem","Address":"127.0.0.1:7443","Create":true,"Wait":"0s"}
+{"State":"/srv/sq/receiver/state","Artifacts":"/srv/sq/receiver/artifacts","Shared":"/srv/sq/shared","Signer":"/srv/sq/sign-b/s","SignerUID":1002,"Approver":"$OP","Address":"127.0.0.1:7443","Create":true,"Wait":"0s"}
 EOF
 sudo tee /srv/sq/shared/caller.json >/dev/null <<EOF
 {"State":"/srv/sq/caller/state","Artifacts":"/srv/sq/caller/artifacts","Shared":"/srv/sq/shared","Signer":"/srv/sq/sign-a/s","SignerUID":1001,"Approver":"$OP","Address":"127.0.0.1:7443","Create":true,"Wait":"365s"}
@@ -55,7 +56,7 @@ EOF
 
 log "signers"
 as 1001:2001 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-a/seed -socket /srv/sq/sign-a/s -allow-uid 1004 -roles intent,result,transport > /tmp/sq-signer-a.out 2>&1 &
-as 1002:2002 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-b/seed -socket /srv/sq/sign-b/s -allow-uid 1003 -roles result,transport > /tmp/sq-signer-b.out 2>&1 &
+as 1002:2002 /srv/sq/bin/adk-signer serve -key /srv/sq/signer-b/seed -kem-key /srv/sq/signer-b/kem -socket /srv/sq/sign-b/s -allow-uid 1003 -roles result,transport,kem > /tmp/sq-signer-b.out 2>&1 &
 sleep 2
 cat /tmp/sq-signer-a.out /tmp/sq-signer-b.out | tee -a "$LOG"
 
@@ -68,6 +69,7 @@ log "isolation checks"
 as 1004:2001 sh -c 'cat /srv/sq/signer-a/seed >/dev/null 2>&1 && echo FAIL caller-read-signer-key || echo caller-cannot-read-signer-key' | tee -a "$LOG"
 as 1003:2002 sh -c 'ls /srv/sq/caller/state >/dev/null 2>&1 && echo FAIL receiver-read-caller-state || echo receiver-cannot-read-caller-state' | tee -a "$LOG"
 as 1003:2002 sh -c 'ls /srv/sq/sign-a >/dev/null 2>&1 && echo FAIL receiver-reached-signer-a || echo receiver-cannot-reach-signer-a' | tee -a "$LOG"
+as 1003:2002 sh -c 'cat /srv/sq/signer-b/kem >/dev/null 2>&1 && echo FAIL receiver-read-kem-key || echo receiver-cannot-read-kem-key' | tee -a "$LOG"
 
 log "caller (waits for the 360 s replay quarantine)"
 set +e

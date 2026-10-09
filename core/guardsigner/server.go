@@ -4,6 +4,7 @@ package guardsigner
 import (
 	"bytes"
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"errors"
 	"net"
@@ -13,9 +14,12 @@ import (
 
 // Config is protected signer administration, never host, model or peer input.
 // Key is copied; the caller should discard its own copy. Roles select allowed
-// signing domains. AllowedUIDs lists host accounts that may request signatures.
+// signing domains; "kem" enables X25519 key agreement with KEM, the 32-byte
+// X25519 private key, which is required for and only accepted with that role.
+// AllowedUIDs lists host accounts that may request operations.
 type Config struct {
 	Key            ed25519.PrivateKey
+	KEM            []byte
 	Roles          []string
 	AllowedUIDs    []uint32
 	Timeout        time.Duration
@@ -29,6 +33,7 @@ type Server struct {
 	key     ed25519.PrivateKey
 	public  ed25519.PublicKey
 	domains [][]byte
+	kem     *ecdh.PrivateKey
 	allowed map[uint32]bool
 	timeout time.Duration
 	slots   chan struct{}
@@ -48,6 +53,10 @@ func NewServer(c Config) (*Server, error) {
 	s := &Server{key: key, public: key.Public().(ed25519.PublicKey), allowed: map[uint32]bool{}, timeout: c.Timeout, slots: make(chan struct{}, c.MaxConnections)}
 	seen := map[string]bool{}
 	for _, role := range c.Roles {
+		if role == "kem" && !seen[role] {
+			seen[role] = true
+			continue
+		}
 		domains, ok := roleDomains[role]
 		if !ok || seen[role] {
 			return nil, ErrDenied
@@ -56,6 +65,16 @@ func NewServer(c Config) (*Server, error) {
 		for _, d := range domains {
 			s.domains = append(s.domains, []byte(d))
 		}
+	}
+	if seen["kem"] != (len(c.KEM) != 0) {
+		return nil, ErrDenied
+	}
+	if seen["kem"] {
+		kem, err := ecdh.X25519().NewPrivateKey(c.KEM)
+		if err != nil {
+			return nil, ErrDenied
+		}
+		s.kem = kem
 	}
 	for _, uid := range c.AllowedUIDs {
 		s.allowed[uid] = true
@@ -146,6 +165,21 @@ func (s *Server) answer(op byte, payload []byte) ([]byte, error) {
 			return nil, ErrDenied
 		}
 		return ed25519.Sign(s.key, payload), nil
+	case opKEMPublic:
+		if s.kem == nil || len(payload) != 0 {
+			return nil, ErrDenied
+		}
+		return s.kem.PublicKey().Bytes(), nil
+	case opECDH:
+		if s.kem == nil || len(payload) != 32 {
+			return nil, ErrDenied
+		}
+		peer, err := ecdh.X25519().NewPublicKey(payload)
+		if err != nil {
+			return nil, ErrDenied
+		}
+		// crypto/ecdh refuses an all-zero (low-order) result.
+		return s.kem.ECDH(peer)
 	}
 	return nil, ErrDenied
 }
@@ -171,5 +205,6 @@ func (s *Server) Close() {
 		s.key[i] = 0
 	}
 	s.key = nil
+	s.kem = nil
 	s.closed = true
 }

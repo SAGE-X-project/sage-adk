@@ -24,7 +24,8 @@ const (
 )
 
 // Roles group domains that one key may sign. A key configured only for
-// "intent" cannot sign a tool result or a transport envelope.
+// "intent" cannot sign a tool result or a transport envelope. The separate
+// "kem" role enables X25519 key agreement with Config.KEM and signs nothing.
 var roleDomains = map[string][]string{
 	"intent":    {DomainIntent},
 	"result":    {DomainResult},
@@ -35,6 +36,8 @@ const (
 	magic          = "SGS1"
 	opPublicKey    = byte(1)
 	opSign         = byte(2)
+	opKEMPublic    = byte(3)
+	opECDH         = byte(4)
 	statusOK       = byte(0)
 	statusDenied   = byte(1)
 	headerBytes    = 9
