@@ -8,7 +8,6 @@
 // accepts any snapshot. Neither is authoritative, observed or isolated, so a
 // successful run is not Registry, measurement or deployment evidence.
 //
-//	qualification kemgen   -key FILE
 //	qualification setup    -dir DIR -alice HEX -bob HEX -kem HEX
 //	qualification receiver -config FILE
 //	qualification caller   -config FILE
@@ -17,9 +16,7 @@ package main
 
 import (
 	"context"
-	"crypto/ecdh"
 	"crypto/ed25519"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -52,12 +49,10 @@ const (
 
 func main() {
 	if len(os.Args) < 2 {
-		fail(errors.New("usage: qualification kemgen|setup|receiver|caller [flags]"))
+		fail(errors.New("usage: qualification setup|receiver|caller|clockwatch [flags]"))
 	}
 	var err error
 	switch os.Args[1] {
-	case "kemgen":
-		err = kemgen(os.Args[2:])
 	case "setup":
 		err = setup(os.Args[2:])
 	case "receiver":
@@ -100,32 +95,6 @@ func clockwatch(args []string) error {
 		last = now
 	}
 	fmt.Printf("clock observed %s backward-steps=%d\n", *d, steps)
-	return nil
-}
-
-// kemgen writes a private X25519 key readable only by this account.
-func kemgen(args []string) error {
-	fs := flag.NewFlagSet("kemgen", flag.ContinueOnError)
-	path := fs.String("key", "", "new key file")
-	if err := fs.Parse(args); err != nil || *path == "" {
-		return errors.New("kemgen requires -key")
-	}
-	k, err := ecdh.X25519().GenerateKey(rand.Reader)
-	if err != nil {
-		return err
-	}
-	f, err := os.OpenFile(*path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0400)
-	if err != nil {
-		return err
-	}
-	if _, err = f.Write(k.Bytes()); err != nil {
-		_ = f.Close()
-		return err
-	}
-	if err = f.Close(); err != nil {
-		return err
-	}
-	fmt.Println(hex.EncodeToString(k.PublicKey().Bytes()))
 	return nil
 }
 
@@ -226,7 +195,6 @@ type config struct {
 	Signer                   string
 	SignerUID                uint32
 	Approver                 string
-	KEM                      string
 	Address                  string
 	Create                   bool
 	Wait                     string
@@ -306,16 +274,9 @@ func receiver(args []string) error {
 	if err != nil {
 		return err
 	}
-	kem, err := os.ReadFile(c.KEM)
-	if err != nil {
-		return err
-	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	host, err := guardhost.OpenReceiver(ctx, guardhost.ReceiverConfig{Environment: p.env, Identity: guardhost.Identity{DID: bob, KeyID: bob + "#signing-1", Transport: p.signer, Result: p.signer}, KEM: kem, Issuer: alice, IssuerKey: alice + "#signing-1", Approved: p.approved, Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPResponder, Name: "adk qualification receiver", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}})
-	for i := range kem {
-		kem[i] = 0
-	}
+	host, err := guardhost.OpenReceiver(ctx, guardhost.ReceiverConfig{Environment: p.env, Identity: guardhost.Identity{DID: bob, KeyID: bob + "#signing-1", Transport: p.signer, Result: p.signer}, KEM: p.signer.KEM(), Issuer: alice, IssuerKey: alice + "#signing-1", Approved: p.approved, Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPResponder, Name: "adk qualification receiver", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}})
 	if err != nil {
 		return fmt.Errorf("open receiver: %w", err)
 	}

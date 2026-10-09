@@ -5,8 +5,11 @@ package guardhost_test
 
 import (
 	"context"
+	"crypto/ecdh"
+	"crypto/rand"
 	"errors"
 	"net"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -165,5 +168,35 @@ func TestCallerRefusesInvalidCalls(t *testing.T) {
 		if cl, err := guardhost.OpenCaller(ctx, c); err == nil || cl != nil {
 			t.Fatalf("%s caller opened", name)
 		}
+	}
+}
+
+// KEM custody holding a key other than the registered one cannot complete the
+// handshake, so no call reaches the tool.
+func TestUnregisteredKEMCustodyRefusesCall(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	other, err := ecdh.X25519().GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	wrong := serveSigner(t, filepath.Join(dir, "k"), w.bobKey, other.Bytes(), "result", "transport", "kem")
+	rc := w.receiverConfig(t)
+	rc.KEM = wrong.KEM()
+	r, err := guardhost.OpenReceiver(ctx, rc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := serve(t, r)
+	defer s.close(t)
+	caller, err := guardhost.OpenCaller(ctx, w.callerConfig(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = caller.Close() }()
+	w.clock.mono.Add(361000)
+	if out, err := callOnce(t, caller, s.listener.Addr().String(), proposal()); err == nil || out != nil {
+		t.Fatal("call completed with an unregistered KEM key")
 	}
 }

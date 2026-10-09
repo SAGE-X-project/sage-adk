@@ -6,7 +6,8 @@
 // serves signatures to allowlisted local host accounts over a Unix socket.
 //
 //	adk-signer keygen -key PATH
-//	adk-signer serve -key PATH -socket PATH -allow-uid UID[,UID] -roles ROLE[,ROLE]
+//	adk-signer kemgen -key PATH
+//	adk-signer serve -key PATH [-kem-key PATH] -socket PATH -allow-uid UID[,UID] -roles ROLE[,ROLE]
 //
 // Run it under an account separate from the protected host and from any model
 // or plugin process. Deployment owns account, directory and file protection.
@@ -44,6 +45,8 @@ func run(args []string, out io.Writer) error {
 	switch args[0] {
 	case "keygen":
 		return keygen(args[1:], out)
+	case "kemgen":
+		return kemgen(args[1:], out)
 	case "serve":
 		return serve(args[1:], out)
 	}
@@ -67,12 +70,30 @@ func keygen(args []string, out io.Writer) error {
 	return err
 }
 
+func kemgen(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("kemgen", flag.ContinueOnError)
+	key := fs.String("key", "", "new X25519 key file path (must not exist)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *key == "" || fs.NArg() != 0 {
+		return errors.New("kemgen requires -key and no arguments")
+	}
+	public, err := guardsigner.GenerateKEMFile(*key)
+	if err != nil {
+		return errors.New("key file not created")
+	}
+	_, err = fmt.Fprintln(out, hex.EncodeToString(public))
+	return err
+}
+
 func serve(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 	key := fs.String("key", "", "seed file path")
+	kemKey := fs.String("kem-key", "", "X25519 key file path for the kem role")
 	socket := fs.String("socket", "", "absolute Unix socket path (must not exist)")
 	uids := fs.String("allow-uid", "", "comma-separated host account IDs")
-	roles := fs.String("roles", "", "comma-separated roles: intent, result, transport")
+	roles := fs.String("roles", "", "comma-separated roles: intent, result, transport, kem")
 	timeout := fs.Duration("timeout", 2*time.Second, "per-request deadline")
 	conns := fs.Int("max-connections", 16, "concurrent request bound")
 	if err := fs.Parse(args); err != nil {
@@ -89,9 +110,18 @@ func serve(args []string, out io.Writer) error {
 	if err != nil {
 		return errors.New("key file unavailable or not private")
 	}
-	server, err := guardsigner.NewServer(guardsigner.Config{Key: private, Roles: strings.Split(*roles, ","), AllowedUIDs: allowed, Timeout: *timeout, MaxConnections: *conns})
+	var kem []byte
+	if *kemKey != "" {
+		if kem, err = guardsigner.LoadKEMFile(*kemKey); err != nil {
+			return errors.New("kem key file unavailable or not private")
+		}
+	}
+	server, err := guardsigner.NewServer(guardsigner.Config{Key: private, KEM: kem, Roles: strings.Split(*roles, ","), AllowedUIDs: allowed, Timeout: *timeout, MaxConnections: *conns})
 	for i := range private {
 		private[i] = 0
+	}
+	for i := range kem {
+		kem[i] = 0
 	}
 	if err != nil {
 		return errors.New("invalid signer configuration")

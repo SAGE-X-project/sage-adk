@@ -136,11 +136,11 @@ func (s *state) authority(name, did, kid string) (*g.RegistryAuthority, error) {
 }
 
 // transport opens the shared transport gate and durable replay journal and
-// returns a factory for per-connection endpoints with custody-held signing.
-// The core owns and closes each endpoint when its connection ends; every
-// endpoint shares the same replay store. kem is the local X25519 private key
-// for a responder and empty for an initiator; each endpoint copies it.
-func (s *state) transport(id Identity, kem []byte) (func(context.Context) (*h.CompletionEndpoint010, error), error) {
+// returns a factory for per-connection endpoints whose signing and KEM keys
+// both stay in custody. The core owns and closes each endpoint when its
+// connection ends; every endpoint shares the same replay store. kem is the
+// responder's X25519 custody and nil for an initiator.
+func (s *state) transport(id Identity, kem h.X25519Custody010) (func(context.Context) (*h.CompletionEndpoint010, error), error) {
 	gate, err := s.gate("transport")
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (s *state) transport(id Identity, kem []byte) (func(context.Context) (*h.Co
 	}
 	s.replays = append(s.replays, replay)
 	return func(ctx context.Context) (*h.CompletionEndpoint010, error) {
-		e, err := h.NewCustodyCompletionEndpoint010(ctx, id.DID, id.KeyID, id.Transport, kem, gate, s.env.Clock, replay)
+		e, err := h.NewProtectedCompletionEndpoint010(ctx, id.DID, id.KeyID, id.Transport, kem, gate, s.env.Clock, replay)
 		if err != nil {
 			return nil, ErrDenied
 		}

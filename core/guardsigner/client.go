@@ -45,6 +45,38 @@ func (c *Client) Sign(ctx context.Context, message []byte) ([]byte, error) {
 	return out, nil
 }
 
+// KEM returns the X25519 key agreement view of this signer, satisfying the
+// core hpke.X25519Custody010 port. The signer must hold the "kem" role.
+func (c *Client) KEM() *KEMClient { return &KEMClient{client: c} }
+
+// KEMClient asks the signer for its X25519 public key and for one X25519
+// shared value. It never receives the private key.
+type KEMClient struct{ client *Client }
+
+// PublicKey returns the signer's X25519 public key.
+func (k *KEMClient) PublicKey(ctx context.Context) ([]byte, error) {
+	if k == nil {
+		return nil, ErrDenied
+	}
+	out, err := k.client.call(ctx, opKEMPublic, nil)
+	if err != nil || len(out) != 32 {
+		return nil, ErrDenied
+	}
+	return out, nil
+}
+
+// ECDH returns the X25519 shared value with a 32-byte peer public key.
+func (k *KEMClient) ECDH(ctx context.Context, peer []byte) ([]byte, error) {
+	if k == nil || len(peer) != 32 {
+		return nil, ErrDenied
+	}
+	out, err := k.client.call(ctx, opECDH, peer)
+	if err != nil || len(out) != 32 {
+		return nil, ErrDenied
+	}
+	return out, nil
+}
+
 func (c *Client) call(ctx context.Context, op byte, payload []byte) (out []byte, err error) {
 	defer func() {
 		if recover() != nil {
