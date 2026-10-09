@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/sage-x-project/sage-adk/core/capture"
-	"github.com/sage-x-project/sage/pkg/agent/crypto/jcs"
 	g "github.com/sage-x-project/sage/pkg/agent/guard010"
 )
 
@@ -109,7 +108,7 @@ func open(ctx context.Context, request retainedInput, c Config, parent, issuer s
 	if e != nil {
 		return nil, ErrDenied
 	}
-	manifest, e := jcs.Canonicalize(c.Manifest)
+	manifest, e := g.CanonicalManifest(c.Manifest)
 	if e != nil {
 		return nil, ErrDenied
 	}
