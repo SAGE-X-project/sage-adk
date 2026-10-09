@@ -146,7 +146,7 @@ func newWorld(t *testing.T) *world {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
-	w.aliceSigner = serveSigner(t, filepath.Join(dir, "a"), w.aliceKey, nil, "intent", "result", "transport")
+	w.aliceSigner = serveSigner(t, filepath.Join(dir, "a"), w.aliceKey, nil, "intent", "transport")
 	// Bob's signer also holds his X25519 KEM key; the receiver holds no key.
 	w.bobSigner = serveSigner(t, filepath.Join(dir, "b"), w.bobKey, w.kemPrivate, "result", "transport", "kem")
 	return w
@@ -205,6 +205,10 @@ func (w *world) approved(t *testing.T, artifacts string, sequence uint64) guardh
 	return guardhost.Approved{Operation: b.Config{Directory: artifacts, Policy: w.policy, Manifest: w.manifest, Limits: b.Limits{FileBytes: 4096, TotalBytes: 16384}, Factory: factory}, Approval: approval, Approvers: []ed25519.PublicKey{w.operator.Public().(ed25519.PublicKey)}}
 }
 
+func clientBounds() g.MCPClientHostBounds {
+	return g.MCPClientHostBounds{Clients: 2, Owners: 4, Client: 20 * time.Second, Tick: time.Millisecond}
+}
+
 func bounds() g.MCPHostBounds {
 	return g.MCPHostBounds{Capacity: 2, Preparations: 2, Clients: 2, Owners: 4, Workers: 1, Request: 20 * time.Second, Claim: 10 * time.Second, Worker: 5 * time.Second, Client: 20 * time.Second, Tick: time.Millisecond}
 }
@@ -220,7 +224,7 @@ func (w *world) receiverConfig(t *testing.T) guardhost.ReceiverConfig {
 
 func (w *world) callerConfig(t *testing.T) guardhost.CallerConfig {
 	state, artifacts := w.hostDir(t)
-	return guardhost.CallerConfig{Environment: w.env(state), Identity: guardhost.Identity{DID: alice, KeyID: alice + "#signing-1", Transport: w.aliceSigner, Result: w.aliceSigner}, Intent: w.aliceSigner, Recipient: bob, RecipientKey: bob + "#signing-1", Approved: w.approved(t, artifacts, 1), Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: bob, RecipientKey: bob + "#signing-1", Name: "adk guarded caller", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}}
+	return guardhost.CallerConfig{Environment: w.env(state), Identity: guardhost.Identity{DID: alice, KeyID: alice + "#signing-1", Transport: w.aliceSigner}, Intent: w.aliceSigner, Recipient: bob, RecipientKey: bob + "#signing-1", Approved: w.approved(t, artifacts, 1), Bounds: clientBounds(), Connection: g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: bob, RecipientKey: bob + "#signing-1", Name: "adk guarded caller", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}}
 }
 
 func proposal() g.IntentProposal {
@@ -356,6 +360,9 @@ func TestHostAssemblyRefusesMissingPorts(t *testing.T) {
 		"no-intent-custody": func(c *guardhost.CallerConfig) { c.Intent = nil },
 		"peer-mismatch":     func(c *guardhost.CallerConfig) { c.Connection.Recipient = alice },
 		"wrong-intent-key":  func(c *guardhost.CallerConfig) { c.Intent = w.bobSigner },
+		"no-transport":      func(c *guardhost.CallerConfig) { c.Transport = nil },
+		// A caller receives no calls, so a result custody is a configuration error.
+		"result-custody": func(c *guardhost.CallerConfig) { c.Result = w.aliceSigner },
 	} {
 		t.Run(name, func(t *testing.T) {
 			c := w.callerConfig(t)

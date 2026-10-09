@@ -47,6 +47,20 @@ func Open(path string, create bool, recipient string, s Services, bindings []Bin
 	return &Host{native: native}, nil
 }
 
+// OpenClient opens an initiator-only host for root Client calls. It opens no
+// admission gate, ledger, executor, policy or result signer; Serve and
+// responder connections are refused by the core.
+func OpenClient(clock r.Clock, b g.MCPClientHostBounds) (*Host, error) {
+	if absent(clock) {
+		return nil, ErrDenied
+	}
+	native, err := g.OpenMCPClientHost(clock, b)
+	if err != nil {
+		return nil, err
+	}
+	return &Host{native: native}, nil
+}
+
 // Connect hands an owned connection to the core's authenticated native lifecycle.
 // The handler is trusted host code; never give its connection to model/plugins.
 func (h *Host) Connect(ctx context.Context, conn net.Conn, c g.MCPConnectionConfig, handler g.MCPConnectionHandler) error {

@@ -261,6 +261,10 @@ func assemble(c config) (parts, error) {
 	}, nil
 }
 
+func clientBounds() g.MCPClientHostBounds {
+	return g.MCPClientHostBounds{Clients: 2, Owners: 4, Client: 20 * time.Second, Tick: time.Millisecond}
+}
+
 func bounds() g.MCPHostBounds {
 	return g.MCPHostBounds{Capacity: 2, Preparations: 2, Clients: 2, Owners: 4, Workers: 1, Request: 20 * time.Second, Claim: 10 * time.Second, Worker: 5 * time.Second, Client: 20 * time.Second, Tick: time.Millisecond}
 }
@@ -313,7 +317,7 @@ func caller(args []string) error {
 		return err
 	}
 	ctx := context.Background()
-	host, err := guardhost.OpenCaller(ctx, guardhost.CallerConfig{Environment: p.env, Identity: guardhost.Identity{DID: alice, KeyID: alice + "#signing-1", Transport: p.signer, Result: p.signer}, Intent: p.signer, Recipient: bob, RecipientKey: bob + "#signing-1", Approved: p.approved, Bounds: bounds(), Connection: g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: bob, RecipientKey: bob + "#signing-1", Name: "adk qualification caller", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}})
+	host, err := guardhost.OpenCaller(ctx, guardhost.CallerConfig{Environment: p.env, Identity: guardhost.Identity{DID: alice, KeyID: alice + "#signing-1", Transport: p.signer}, Intent: p.signer, Recipient: bob, RecipientKey: bob + "#signing-1", Approved: p.approved, Bounds: clientBounds(), Connection: g.MCPConnectionConfig{Role: g.MCPInitiator, Recipient: bob, RecipientKey: bob + "#signing-1", Name: "adk qualification caller", Version: "1", TTLSeconds: 300, Timeout: 3 * time.Second}})
 	if err != nil {
 		return fmt.Errorf("open caller: %w", err)
 	}
