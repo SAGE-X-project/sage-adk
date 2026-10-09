@@ -28,7 +28,7 @@ func TestOpenClientIsInitiatorOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := h.Serve(ctx, listener, 1, g.MCPConnectionConfig{Role: g.MCPResponder}, nil); err == nil {
