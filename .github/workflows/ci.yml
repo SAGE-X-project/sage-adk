@@ -51,6 +51,12 @@ jobs:
         run: |
           go test -mod=readonly -race -coverprofile="$RUNNER_TEMP/calculator-binding.cover" ./core/guardcalculator
           go tool cover -func="$RUNNER_TEMP/calculator-binding.cover" | awk '/^total:/ { sub(/%$/, "", $3); found=1; if ($3+0 < 85) exit 1 } END { if (!found) exit 1 }'
+      - name: Protected host assembly coverage
+        run: |
+          for pkg in guardhost guardsigner guardapproval; do
+            go test -mod=readonly -race -coverprofile="$RUNNER_TEMP/$pkg.cover" -timeout 5m "./core/$pkg"
+            go tool cover -func="$RUNNER_TEMP/$pkg.cover" | awk -v pkg="$pkg" '/^total:/ { sub(/%$/, "", $3); found=1; if ($3+0 < 90) { print pkg " coverage " $3 "% is below 90%"; exit 1 } } END { if (!found) exit 1 }'
+          done
       - name: External library consumer
         working-directory: verification/library-consumer
         run: |
