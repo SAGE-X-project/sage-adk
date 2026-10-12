@@ -43,6 +43,10 @@ jobs:
           go vet -mod=readonly ./...
       - name: Unit and safe loopback tests
         run: go test -mod=readonly -race -timeout 10m ./...
+      - name: Protected A2A binding coverage and safe TLS fixture
+        run: |
+          go test -mod=readonly -race -coverprofile="$RUNNER_TEMP/a2a-binding.cover" ./core/a2abinding
+          python3 verification/a2a-basis/check_coverage.py "$RUNNER_TEMP/a2a-binding.cover"
       - name: Approved operation policy coverage
         run: |
           go test -mod=readonly -race -coverpkg=./core/guardbinding -coverprofile="$RUNNER_TEMP/approved-operation.cover" -timeout 2m ./core/guardbinding ./core/toolhost

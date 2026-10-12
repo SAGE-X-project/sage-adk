@@ -1,0 +1,1196 @@
+{
+  "APIKeySecurityScheme": [
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "location",
+      "kind": "scalar",
+      "name": "location",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "name",
+      "kind": "scalar",
+      "name": "name",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "AgentCapabilities": [
+    {
+      "json": "streaming",
+      "kind": "scalar",
+      "name": "streaming",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "bool"
+    },
+    {
+      "json": "pushNotifications",
+      "kind": "scalar",
+      "name": "push_notifications",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "bool"
+    },
+    {
+      "json": "extensions",
+      "kind": "repeated",
+      "name": "extensions",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "AgentExtension"
+    },
+    {
+      "json": "extendedAgentCard",
+      "kind": "scalar",
+      "name": "extended_agent_card",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "bool"
+    }
+  ],
+  "AgentCard": [
+    {
+      "json": "name",
+      "kind": "scalar",
+      "name": "name",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "supportedInterfaces",
+      "kind": "repeated",
+      "name": "supported_interfaces",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "AgentInterface"
+    },
+    {
+      "json": "provider",
+      "kind": "scalar",
+      "name": "provider",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "AgentProvider"
+    },
+    {
+      "json": "version",
+      "kind": "scalar",
+      "name": "version",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "documentationUrl",
+      "kind": "scalar",
+      "name": "documentation_url",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "capabilities",
+      "kind": "scalar",
+      "name": "capabilities",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "AgentCapabilities"
+    },
+    {
+      "json": "securitySchemes",
+      "kind": "map",
+      "name": "security_schemes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "SecurityScheme"
+    },
+    {
+      "json": "securityRequirements",
+      "kind": "repeated",
+      "name": "security_requirements",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "SecurityRequirement"
+    },
+    {
+      "json": "defaultInputModes",
+      "kind": "repeated",
+      "name": "default_input_modes",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "defaultOutputModes",
+      "kind": "repeated",
+      "name": "default_output_modes",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "skills",
+      "kind": "repeated",
+      "name": "skills",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "AgentSkill"
+    },
+    {
+      "json": "signatures",
+      "kind": "repeated",
+      "name": "signatures",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "AgentCardSignature"
+    },
+    {
+      "json": "iconUrl",
+      "kind": "scalar",
+      "name": "icon_url",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "AgentCardSignature": [
+    {
+      "json": "protected",
+      "kind": "scalar",
+      "name": "protected",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "signature",
+      "kind": "scalar",
+      "name": "signature",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "header",
+      "kind": "scalar",
+      "name": "header",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    }
+  ],
+  "AgentExtension": [
+    {
+      "json": "uri",
+      "kind": "scalar",
+      "name": "uri",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "required",
+      "kind": "scalar",
+      "name": "required",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "bool"
+    },
+    {
+      "json": "params",
+      "kind": "scalar",
+      "name": "params",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    }
+  ],
+  "AgentInterface": [
+    {
+      "json": "url",
+      "kind": "scalar",
+      "name": "url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "protocolBinding",
+      "kind": "scalar",
+      "name": "protocol_binding",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "protocolVersion",
+      "kind": "scalar",
+      "name": "protocol_version",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "AgentProvider": [
+    {
+      "json": "url",
+      "kind": "scalar",
+      "name": "url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "organization",
+      "kind": "scalar",
+      "name": "organization",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "AgentSkill": [
+    {
+      "json": "id",
+      "kind": "scalar",
+      "name": "id",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "name",
+      "kind": "scalar",
+      "name": "name",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "tags",
+      "kind": "repeated",
+      "name": "tags",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "examples",
+      "kind": "repeated",
+      "name": "examples",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "inputModes",
+      "kind": "repeated",
+      "name": "input_modes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "outputModes",
+      "kind": "repeated",
+      "name": "output_modes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "securityRequirements",
+      "kind": "repeated",
+      "name": "security_requirements",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "SecurityRequirement"
+    }
+  ],
+  "AuthenticationInfo": [
+    {
+      "json": "scheme",
+      "kind": "scalar",
+      "name": "scheme",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "credentials",
+      "kind": "scalar",
+      "name": "credentials",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "AuthorizationCodeOAuthFlow": [
+    {
+      "json": "authorizationUrl",
+      "kind": "scalar",
+      "name": "authorization_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "tokenUrl",
+      "kind": "scalar",
+      "name": "token_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "refreshUrl",
+      "kind": "scalar",
+      "name": "refresh_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scopes",
+      "kind": "map",
+      "name": "scopes",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "pkceRequired",
+      "kind": "scalar",
+      "name": "pkce_required",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "bool"
+    }
+  ],
+  "CancelTaskRequest": [
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "id",
+      "kind": "scalar",
+      "name": "id",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "metadata",
+      "kind": "scalar",
+      "name": "metadata",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    }
+  ],
+  "ClientCredentialsOAuthFlow": [
+    {
+      "json": "tokenUrl",
+      "kind": "scalar",
+      "name": "token_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "refreshUrl",
+      "kind": "scalar",
+      "name": "refresh_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scopes",
+      "kind": "map",
+      "name": "scopes",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "DeviceCodeOAuthFlow": [
+    {
+      "json": "deviceAuthorizationUrl",
+      "kind": "scalar",
+      "name": "device_authorization_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "tokenUrl",
+      "kind": "scalar",
+      "name": "token_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "refreshUrl",
+      "kind": "scalar",
+      "name": "refresh_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scopes",
+      "kind": "map",
+      "name": "scopes",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "GetTaskRequest": [
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "id",
+      "kind": "scalar",
+      "name": "id",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "historyLength",
+      "kind": "scalar",
+      "name": "history_length",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "int32"
+    }
+  ],
+  "HTTPAuthSecurityScheme": [
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scheme",
+      "kind": "scalar",
+      "name": "scheme",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "bearerFormat",
+      "kind": "scalar",
+      "name": "bearer_format",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "ImplicitOAuthFlow": [
+    {
+      "json": "authorizationUrl",
+      "kind": "scalar",
+      "name": "authorization_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "refreshUrl",
+      "kind": "scalar",
+      "name": "refresh_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scopes",
+      "kind": "map",
+      "name": "scopes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "ListTasksRequest": [
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "contextId",
+      "kind": "scalar",
+      "name": "context_id",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "status",
+      "kind": "scalar",
+      "name": "status",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "TaskState"
+    },
+    {
+      "json": "pageSize",
+      "kind": "scalar",
+      "name": "page_size",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "int32"
+    },
+    {
+      "json": "pageToken",
+      "kind": "scalar",
+      "name": "page_token",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "historyLength",
+      "kind": "scalar",
+      "name": "history_length",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "int32"
+    },
+    {
+      "json": "statusTimestampAfter",
+      "kind": "scalar",
+      "name": "status_timestamp_after",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Timestamp"
+    },
+    {
+      "json": "includeArtifacts",
+      "kind": "scalar",
+      "name": "include_artifacts",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "bool"
+    }
+  ],
+  "Message": [
+    {
+      "json": "messageId",
+      "kind": "scalar",
+      "name": "message_id",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "contextId",
+      "kind": "scalar",
+      "name": "context_id",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "taskId",
+      "kind": "scalar",
+      "name": "task_id",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "role",
+      "kind": "scalar",
+      "name": "role",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "Role"
+    },
+    {
+      "json": "parts",
+      "kind": "repeated",
+      "name": "parts",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "Part"
+    },
+    {
+      "json": "metadata",
+      "kind": "scalar",
+      "name": "metadata",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    },
+    {
+      "json": "extensions",
+      "kind": "repeated",
+      "name": "extensions",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "referenceTaskIds",
+      "kind": "repeated",
+      "name": "reference_task_ids",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "MutualTlsSecurityScheme": [
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "OAuth2SecurityScheme": [
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "flows",
+      "kind": "scalar",
+      "name": "flows",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "OAuthFlows"
+    },
+    {
+      "json": "oauth2MetadataUrl",
+      "kind": "scalar",
+      "name": "oauth2_metadata_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "OAuthFlows": [
+    {
+      "json": "authorizationCode",
+      "kind": "scalar",
+      "name": "authorization_code",
+      "oneof": "flow",
+      "optional": false,
+      "required": false,
+      "type": "AuthorizationCodeOAuthFlow"
+    },
+    {
+      "json": "clientCredentials",
+      "kind": "scalar",
+      "name": "client_credentials",
+      "oneof": "flow",
+      "optional": false,
+      "required": false,
+      "type": "ClientCredentialsOAuthFlow"
+    },
+    {
+      "json": "implicit",
+      "kind": "scalar",
+      "name": "implicit",
+      "oneof": "flow",
+      "optional": false,
+      "required": false,
+      "type": "ImplicitOAuthFlow"
+    },
+    {
+      "json": "password",
+      "kind": "scalar",
+      "name": "password",
+      "oneof": "flow",
+      "optional": false,
+      "required": false,
+      "type": "PasswordOAuthFlow"
+    },
+    {
+      "json": "deviceCode",
+      "kind": "scalar",
+      "name": "device_code",
+      "oneof": "flow",
+      "optional": false,
+      "required": false,
+      "type": "DeviceCodeOAuthFlow"
+    }
+  ],
+  "OpenIdConnectSecurityScheme": [
+    {
+      "json": "description",
+      "kind": "scalar",
+      "name": "description",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "openIdConnectUrl",
+      "kind": "scalar",
+      "name": "open_id_connect_url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    }
+  ],
+  "Part": [
+    {
+      "json": "text",
+      "kind": "scalar",
+      "name": "text",
+      "oneof": "content",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "raw",
+      "kind": "scalar",
+      "name": "raw",
+      "oneof": "content",
+      "optional": false,
+      "required": false,
+      "type": "bytes"
+    },
+    {
+      "json": "url",
+      "kind": "scalar",
+      "name": "url",
+      "oneof": "content",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "data",
+      "kind": "scalar",
+      "name": "data",
+      "oneof": "content",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Value"
+    },
+    {
+      "json": "metadata",
+      "kind": "scalar",
+      "name": "metadata",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    },
+    {
+      "json": "filename",
+      "kind": "scalar",
+      "name": "filename",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "mediaType",
+      "kind": "scalar",
+      "name": "media_type",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "PasswordOAuthFlow": [
+    {
+      "json": "tokenUrl",
+      "kind": "scalar",
+      "name": "token_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "refreshUrl",
+      "kind": "scalar",
+      "name": "refresh_url",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "scopes",
+      "kind": "map",
+      "name": "scopes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "SecurityRequirement": [
+    {
+      "json": "schemes",
+      "kind": "map",
+      "name": "schemes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "StringList"
+    }
+  ],
+  "SecurityScheme": [
+    {
+      "json": "apiKeySecurityScheme",
+      "kind": "scalar",
+      "name": "api_key_security_scheme",
+      "oneof": "scheme",
+      "optional": false,
+      "required": false,
+      "type": "APIKeySecurityScheme"
+    },
+    {
+      "json": "httpAuthSecurityScheme",
+      "kind": "scalar",
+      "name": "http_auth_security_scheme",
+      "oneof": "scheme",
+      "optional": false,
+      "required": false,
+      "type": "HTTPAuthSecurityScheme"
+    },
+    {
+      "json": "oauth2SecurityScheme",
+      "kind": "scalar",
+      "name": "oauth2_security_scheme",
+      "oneof": "scheme",
+      "optional": false,
+      "required": false,
+      "type": "OAuth2SecurityScheme"
+    },
+    {
+      "json": "openIdConnectSecurityScheme",
+      "kind": "scalar",
+      "name": "open_id_connect_security_scheme",
+      "oneof": "scheme",
+      "optional": false,
+      "required": false,
+      "type": "OpenIdConnectSecurityScheme"
+    },
+    {
+      "json": "mtlsSecurityScheme",
+      "kind": "scalar",
+      "name": "mtls_security_scheme",
+      "oneof": "scheme",
+      "optional": false,
+      "required": false,
+      "type": "MutualTlsSecurityScheme"
+    }
+  ],
+  "SendMessageConfiguration": [
+    {
+      "json": "acceptedOutputModes",
+      "kind": "repeated",
+      "name": "accepted_output_modes",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "taskPushNotificationConfig",
+      "kind": "scalar",
+      "name": "task_push_notification_config",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "TaskPushNotificationConfig"
+    },
+    {
+      "json": "historyLength",
+      "kind": "scalar",
+      "name": "history_length",
+      "oneof": "",
+      "optional": true,
+      "required": false,
+      "type": "int32"
+    },
+    {
+      "json": "returnImmediately",
+      "kind": "scalar",
+      "name": "return_immediately",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "bool"
+    }
+  ],
+  "SendMessageRequest": [
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "message",
+      "kind": "scalar",
+      "name": "message",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "Message"
+    },
+    {
+      "json": "configuration",
+      "kind": "scalar",
+      "name": "configuration",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "SendMessageConfiguration"
+    },
+    {
+      "json": "metadata",
+      "kind": "scalar",
+      "name": "metadata",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "google.protobuf.Struct"
+    }
+  ],
+  "StringList": [
+    {
+      "json": "list",
+      "kind": "repeated",
+      "name": "list",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    }
+  ],
+  "TaskPushNotificationConfig": [
+    {
+      "json": "tenant",
+      "kind": "scalar",
+      "name": "tenant",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "id",
+      "kind": "scalar",
+      "name": "id",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "taskId",
+      "kind": "scalar",
+      "name": "task_id",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "url",
+      "kind": "scalar",
+      "name": "url",
+      "oneof": "",
+      "optional": false,
+      "required": true,
+      "type": "string"
+    },
+    {
+      "json": "token",
+      "kind": "scalar",
+      "name": "token",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "string"
+    },
+    {
+      "json": "authentication",
+      "kind": "scalar",
+      "name": "authentication",
+      "oneof": "",
+      "optional": false,
+      "required": false,
+      "type": "AuthenticationInfo"
+    }
+  ]
+}
