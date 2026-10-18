@@ -5,7 +5,9 @@ go 1.26.0
 toolchain go1.26.8
 
 require (
-	github.com/sage-x-project/sage v1.5.3-0.20261012104536-4c7bad17ce17
+	github.com/sage-x-project/did-go v0.0.0-20261018080828-3b7a79c1c326
+	github.com/sage-x-project/did-go/advanced/sage v0.0.0-20261018120945-5fac371e54db
+	github.com/sage-x-project/sage v1.5.3-0.20261018151911-5035088faa8e
 	github.com/sage-x-project/sage-adk v0.0.0
 )
 
