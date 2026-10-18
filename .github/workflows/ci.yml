@@ -93,6 +93,9 @@ jobs:
           go mod verify > "$evidence/modules-verified.txt"
           go test -mod=readonly -race -count=1 -timeout 2m -json -run '^TestAdoptedDID' ./... | tee "$evidence/tests.jsonl"
           git diff --exit-code -- go.mod go.sum
+          if [ "$RUNNER_OS" = Linux ]; then
+            (cd ../.. && go test -mod=readonly -race -count=1 -timeout 2m -json -run '^TestMissingPrivateChannelRuntime$' ./core/guardchannel) | tee "$evidence/channel-refusal.jsonl"
+          fi
       - name: Upload public DID consumer evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

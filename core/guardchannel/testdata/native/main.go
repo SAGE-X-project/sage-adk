@@ -15,6 +15,7 @@ import (
 
 	b "github.com/sage-x-project/sage-adk/core/guardbinding"
 	channel "github.com/sage-x-project/sage-adk/core/guardchannel"
+	"golang.org/x/sys/unix"
 )
 
 type fixtureLocalAssurance struct{ calls atomic.Int64 }
@@ -42,6 +43,15 @@ func (f checkedFixture) Check(ctx context.Context, snapshot *b.Snapshot) error {
 	return err
 }
 func main() {
+	// Without an inherited channel, fd 4 may belong to Go's poller. Inspect
+	// its kind without claiming ownership. Peer authentication still belongs
+	// to OpenChild; this fixture preflight establishes no authority.
+	domain, domainErr := unix.GetsockoptInt(4, unix.SOL_SOCKET, unix.SO_DOMAIN)
+	kind, kindErr := unix.GetsockoptInt(4, unix.SOL_SOCKET, unix.SO_TYPE)
+	if domainErr != nil || kindErr != nil || domain != unix.AF_UNIX || kind != unix.SOCK_SEQPACKET {
+		fmt.Fprintln(os.Stderr, "measurement unavailable")
+		os.Exit(1)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	local := &fixtureLocalAssurance{}
 	measured, err := channel.OpenChild(ctx, os.NewFile(4, "protected-child"), local, 5*time.Second)

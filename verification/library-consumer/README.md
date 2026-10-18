@@ -46,3 +46,11 @@ events, while preserving the existing external consumer and full-suite gates.
 
 The exact public core and DID versions/sums are in `did-dependencies.json`; CI
 rejects any different selection or replacement of these three dependencies.
+
+The Linux missing-channel runtime fixture checks descriptor kind before giving
+OpenChild ownership. An unsupervised process can otherwise find the Go poller
+at descriptor 4 and close an unowned resource while refusing the channel. Both
+no inherited descriptor and an inherited ordinary file must deny without a
+runtime fatal error or arithmetic effect. The production OpenChild ownership
+and peer-authentication contracts are unchanged. Linux CI retains these two
+refusal events separately from the ten DID consumer checks.
