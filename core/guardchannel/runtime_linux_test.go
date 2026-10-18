@@ -191,14 +191,31 @@ func TestMissingPrivateChannelRuntime(t *testing.T) {
 	if e := os.WriteFile(path, childImage(t), 0500); e != nil {
 		t.Fatal(e)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, path)
-	output, e := cmd.CombinedOutput()
-	if e == nil || !bytes.Contains(output, []byte("measurement unavailable")) || bytes.Contains(output, []byte("verified-guarded-result")) {
-		t.Fatalf("missing channel fallback: %s %v", output, e)
+	for _, mode := range []string{"not-inherited", "non-channel"} {
+		t.Run(mode, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, path)
+			if mode == "non-channel" {
+				file, e := os.Open(os.DevNull)
+				if e != nil {
+					t.Fatal(e)
+				}
+				defer func() {
+					if e := file.Close(); e != nil {
+						t.Error(e)
+					}
+				}()
+				cmd.ExtraFiles = []*os.File{file, file}
+			}
+			output, e := cmd.CombinedOutput()
+			if e == nil || !bytes.Contains(output, []byte("measurement unavailable")) || bytes.Contains(output, []byte("verified-guarded-result")) || bytes.Contains(output, []byte("fatal error:")) {
+				t.Fatalf("missing channel fallback: %s %v", output, e)
+			}
+		})
 	}
 }
+
 func TestKernelCredentialAndAncillaryRefusalUnits(t *testing.T) {
 	s := &socket{peer: 123, uid: 456, gid: 789}
 	correct := unix.UnixCredentials(&unix.Ucred{Pid: 123, Uid: 456, Gid: 789})

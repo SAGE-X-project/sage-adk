@@ -7,7 +7,7 @@ toolchain go1.26.8
 // Utilities
 require (
 	github.com/google/uuid v1.6.0
-	github.com/sage-x-project/sage v1.5.3-0.20261012104536-4c7bad17ce17
+	github.com/sage-x-project/sage v1.5.3-0.20261018151911-5035088faa8e
 	trpc.group/trpc-go/trpc-a2a-go v0.2.2
 )
 
@@ -67,8 +67,8 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
-	github.com/sage-x-project/did-go v0.0.0-20261012015322-ed54c505eafe
-	github.com/sage-x-project/did-go/advanced/sage v0.0.0-20261012020818-2ef282b40ccf
+	github.com/sage-x-project/did-go v0.0.0-20261018080828-3b7a79c1c326
+	github.com/sage-x-project/did-go/advanced/sage v0.0.0-20261018120945-5fac371e54db
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/pflag v1.0.10 // indirect

@@ -28,3 +28,29 @@ required connection retirement.
 These are local fixtures. They do not verify effect routes outside the explicit
 native host, authoritative registry ownership or deployed conformance.
 The A2A reply methods remain placeholders.
+
+## Adopted DID and card consumer
+
+`did_consumer_test.go` imports only public ADK, SAGE and DID module APIs. Its
+complete-record reader, clock, journal and signed records are owned fixtures,
+not an operational chain binding. It checks explicit metadata for all three
+states, owned TLS GET/POST success and negotiation diagnostics, and A2A card
+verification against a fresh core Source. Inactive records may be displayed but
+cannot make the card eligible. Card verification grants no message-execution
+authority; the production protected transport remains separate work.
+
+Only the ADK checkout under review is replaced. The core and both DID modules
+come from checksum-verified public versions, with GOWORK disabled. CI retains
+selected versions/checksums, verification results and fresh focused race test
+events, while preserving the existing external consumer and full-suite gates.
+
+The exact public core and DID versions/sums are in `did-dependencies.json`; CI
+rejects any different selection or replacement of these three dependencies.
+
+The Linux missing-channel runtime fixture checks descriptor kind before giving
+OpenChild ownership. An unsupervised process can otherwise find the Go poller
+at descriptor 4 and close an unowned resource while refusing the channel. Both
+no inherited descriptor and an inherited ordinary file must deny without a
+runtime fatal error or arithmetic effect. The production OpenChild ownership
+and peer-authentication contracts are unchanged. Linux CI retains these two
+refusal events separately from the ten DID consumer checks.
