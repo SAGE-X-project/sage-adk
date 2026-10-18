@@ -1,0 +1,68 @@
+name: Protected A2A HTTP
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: protected-http-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  owned-http:
+    name: Owned protected HTTP runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOWORK: 'off'
+      GOTOOLCHAIN: local
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONOPTIMIZE: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.8'
+          cache-dependency-path: go.sum
+      - name: Record exact sources and dependencies
+        run: |
+          evidence="$RUNNER_TEMP/protected-http"
+          mkdir -p "$evidence"
+          go version > "$evidence/compiler.txt"
+          git rev-parse HEAD > "$evidence/revision.txt"
+          git rev-parse 'HEAD^{tree}' > "$evidence/tree.txt"
+          python3 verification/protected-http/check_evidence.py sources "$evidence"
+          go mod download
+          go mod verify > "$evidence/modules-verified.txt"
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          go list -m -json github.com/sage-x-project/sage github.com/sage-x-project/did-go github.com/sage-x-project/did-go/advanced/sage > "$evidence/modules.json"
+          python3 verification/protected-http/check_evidence.py modules "$evidence"
+      - name: Check evidence parser units
+        run: python3 verification/protected-http/run_checker_tests.py
+      - name: Compile and execute actual tests
+        run: |
+          evidence="$RUNNER_TEMP/protected-http"
+          go test -mod=readonly -race -cover -covermode=atomic -c -o "$RUNNER_TEMP/protected-http.test" ./core/a2abinding
+          go version -m "$RUNNER_TEMP/protected-http.test" > "$evidence/test-build-info.txt"
+          sha256sum "$RUNNER_TEMP/protected-http.test" > "$evidence/test-binary.sha256"
+          (cd core/a2abinding && go tool test2json -p github.com/sage-x-project/sage-adk/core/a2abinding -t "$RUNNER_TEMP/protected-http.test" -test.v=test2json -test.timeout=5m -test.coverprofile="$evidence/all.cover" > "$evidence/all-tests.jsonl")
+          python3 verification/a2a-basis/check_coverage.py "$evidence/all.cover"
+          (cd core/a2abinding && go tool test2json -p github.com/sage-x-project/sage-adk/core/a2abinding -t "$RUNNER_TEMP/protected-http.test" -test.run='^TestProtectedHTTP' -test.v=test2json -test.timeout=3m -test.coverprofile="$evidence/focused.cover" > "$evidence/tests.jsonl")
+          python3 verification/protected-http/check_evidence.py tests "$evidence"
+          python3 verification/protected-http/check_evidence.py unchanged "$evidence"
+          git diff --exit-code
+      - name: Retain actual protected HTTP evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: protected-a2a-http
+          path: ${{ runner.temp }}/protected-http/
+          if-no-files-found: error
+          retention-days: 14
