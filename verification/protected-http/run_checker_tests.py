@@ -13,7 +13,7 @@ def run():
         suite = unittest.defaultTestLoader.discover(str(directory), pattern="test_check_evidence.py")
         return unittest.TextTestRunner().run(suite)
     result = tracer.runfunc(execute)
-    if not result.wasSuccessful() or result.testsRun != 7:
+    if not result.wasSuccessful() or result.testsRun != 11:
         raise SystemExit("evidence parser units did not complete")
     source = directory / "check_evidence.py"
     lines = set(trace._find_executable_linenos(str(source)))
@@ -21,7 +21,7 @@ def run():
     covered = len(lines & executed)
     if not lines or covered * 100 < len(lines) * 90:
         raise SystemExit(f"evidence parser: {covered}/{len(lines)} executable lines; 90% required")
-    print(f"Synthetic evidence parser units: 7; parser coverage {covered}/{len(lines)} lines")
+    print(f"Synthetic evidence parser units: 11; parser coverage {covered}/{len(lines)} lines")
 
 
 if __name__ == "__main__":
