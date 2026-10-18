@@ -222,7 +222,7 @@ func TestProtectedHTTPLocalIngressRefusals010(t *testing.T) {
 			}
 		})
 	}
-	for _, mode := range []string{"closed-connection", "canceled-connection", "deadline-error"} {
+	for _, mode := range []string{"closed-connection", "canceled-connection", "deadline-error", "handshake-eof"} {
 		t.Run(mode, func(t *testing.T) {
 			state := &protectedIngressState{transport: &protectedHTTPState{timeout: time.Second}}
 			ctx, cancel := context.WithCancel(context.Background())
@@ -234,7 +234,13 @@ func TestProtectedHTTPLocalIngressRefusals010(t *testing.T) {
 			if mode == "canceled-connection" {
 				cancel()
 			}
-			state.connection(ctx, conn)
+			var raw net.Conn = conn
+			if mode == "handshake-eof" {
+				raw = &conn.protectedMemoryConn
+				cert, _ := protectedCertificate(t)
+				state.transport.tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+			}
+			state.connection(ctx, raw)
 			if conn.closes.Load() != 1 || conn.writes.Load() != 0 || state.transport.conn != nil {
 				t.Fatal("refused connection leaked or wrote application bytes")
 			}
@@ -265,6 +271,121 @@ func TestProtectedHTTPLocalIngressRefusals010(t *testing.T) {
 			body, e := io.ReadAll(response.Body)
 			if e != nil || response.StatusCode != want || !response.Close || string(body) != "authentication failed\n" || conn.writes.Load() != 1 {
 				t.Fatal("generic refusal became a result or retry", e, response.StatusCode, string(body))
+			}
+		})
+	}
+}
+
+// Memory TLS gives deterministic policy/terminal-state observations without a
+// network listener or a configurable destination. Refusal inputs stay unit-only.
+func TestProtectedHTTPMemoryTLS010(t *testing.T) {
+	for _, mode := range []string{"policy-denial-reuse", "card-unavailable-after-handler"} {
+		t.Run(mode, func(t *testing.T) {
+			pair := protectedSessions(t, endpoint, true)
+			left, e := pair.left.TakeHTTPApplication(endpoint)
+			if e != nil {
+				t.Fatal(e)
+			}
+			t.Cleanup(left.Close)
+			card := pair.card(t)
+			effects, cardCalls := 0, 0
+			server, e := NewServer(ServerConfig{DID: peer, URL: endpoint, Verifier: pair.verifier(t), Card: func(context.Context) ([]byte, error) {
+				cardCalls++
+				if mode == "card-unavailable-after-handler" && effects == 1 {
+					return nil, ErrRejected
+				}
+				return card, nil
+			}, Handler: handlerFunc(func(context.Context, []byte) ([]byte, error) { effects++; return reply(), nil })})
+			if e != nil {
+				t.Fatal(e)
+			}
+			cert, roots := protectedCertificate(t)
+			ingress, e := NewHTTPIngress(HTTPIngressConfig{Transport: HTTPTransportConfig{Session: pair.right, URL: endpoint, TLS: &tls.Config{Certificates: []tls.Certificate{cert}}, TTL: 30, Timeout: 3 * time.Second}, Server: server})
+			if e != nil {
+				t.Fatal(e)
+			}
+			t.Cleanup(ingress.Close)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			rounds := 1
+			if mode == "policy-denial-reuse" {
+				rounds = 2
+			}
+			for step := 0; step < rounds; step++ {
+				meta := metadata()
+				deny := mode == "policy-denial-reuse" && step == 0
+				if deny {
+					meta["a2a_version"] = "0.3"
+				}
+				message, e := left.SealRequest(ctx, rpc("GetTask", map[string]any{"id": "task"}), meta, 30)
+				if e != nil {
+					t.Fatal(e)
+				}
+				frame, e := protectedRequestFrame(ctx, message)
+				if e != nil {
+					t.Fatal(e)
+				}
+				clientRaw, serverRaw := net.Pipe()
+				t.Cleanup(func() { _ = clientRaw.Close(); _ = serverRaw.Close() })
+				done := make(chan struct{})
+				go func() { defer close(done); ingress.state.connection(ctx, serverRaw) }()
+				if e = clientRaw.SetDeadline(time.Now().Add(3 * time.Second)); e != nil {
+					t.Fatal(e)
+				}
+				client := tls.Client(clientRaw, &tls.Config{RootCAs: roots, ServerName: "localhost", MinVersion: tls.VersionTLS13, MaxVersion: tls.VersionTLS13, NextProtos: []string{"http/1.1"}})
+				if e = client.HandshakeContext(ctx); e != nil {
+					t.Fatal(e)
+				}
+				if n, err := client.Write(frame); err != nil || n != len(frame) {
+					t.Fatal("unit TLS request write", n, err)
+				}
+				response, readErr := protectedReadResponse(client)
+				select {
+				case <-done:
+				case <-ctx.Done():
+					t.Fatal("memory server did not terminate")
+				}
+				if mode == "card-unavailable-after-handler" {
+					if readErr == nil || effects != 1 || cardCalls != 2 || !ingress.state.transport.closing.Load() {
+						t.Fatal("failed final Card check exposed a response or retained the server", readErr, effects, cardCalls)
+					}
+					pair.rightReplay.mu.Lock()
+					accepted := pair.rightReplay.accepted
+					pair.rightReplay.mu.Unlock()
+					pair.leftReplay.mu.Lock()
+					responses := pair.leftReplay.accepted
+					pair.leftReplay.mu.Unlock()
+					if accepted != 1 || responses != 0 {
+						t.Fatal("accepted request history was undone or response invented", accepted, responses)
+					}
+					continue
+				}
+				if readErr != nil {
+					t.Fatal(readErr)
+				}
+				view, e := left.OpenResponse(ctx, response)
+				if e != nil || view == nil {
+					t.Fatal("memory response lost authentication", e)
+				}
+				if deny {
+					if response.Status != http.StatusUnauthorized || view.Success() || view.Error() != "policy_denied" || len(view.Payload()) != 0 || effects != 0 {
+						t.Fatal("policy denial reached Handler or became success")
+					}
+				} else if response.Status != http.StatusOK || !view.Success() || view.Error() != "" || !bytes.Equal(view.Payload(), reply()) || effects != 1 {
+					t.Fatal("server did not accept the next explicit valid call", e, effects)
+				}
+				if ingress.state.transport.closing.Load() {
+					t.Fatal("complete signed denial retired the whole server session")
+				}
+				pair.rightReplay.mu.Lock()
+				requests := pair.rightReplay.accepted
+				pair.rightReplay.mu.Unlock()
+				pair.leftReplay.mu.Lock()
+				responses := pair.leftReplay.accepted
+				pair.leftReplay.mu.Unlock()
+				if requests != step+1 || responses != step+1 {
+					t.Fatal("signed terminal request/response acceptance missing", requests, responses)
+				}
 			}
 		})
 	}

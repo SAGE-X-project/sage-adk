@@ -19,7 +19,8 @@ CONTRACT = {
     "ShutdownDuringDial": {"canceled-dial", "late-connection"},
     "DispatchHook": {"once", "missing", "twice", "hook-error", "ignored-verify-error"},
     "DispatchBudgetIncludesVerify": set(),
-    "LocalIngressRefusals": {"consumed-session", "wrong-local", "already-serving", "closed", "closed-connection", "canceled-connection", "deadline-error", "empty-response", "unsigned-bad-request", "unsigned-unauthorized"},
+    "MemoryTLS": {"policy-denial-reuse", "card-unavailable-after-handler"},
+    "LocalIngressRefusals": {"consumed-session", "wrong-local", "already-serving", "closed", "closed-connection", "canceled-connection", "deadline-error", "handshake-eof", "empty-response", "unsigned-bad-request", "unsigned-unauthorized"},
     "ConstructionAndClosure": {"nil-session", "wrong-target", "ttl-zero", "ttl-large", "timeout-zero", "timeout-large", "tls-nil", "server-name", "bad-tls"},
 }
 
