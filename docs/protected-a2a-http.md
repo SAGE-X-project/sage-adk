@@ -125,3 +125,15 @@ coverage and test binary hash. Those facts do not establish an operating Registr
 measured host, complete Inspector conformance, historical DIDP04 closure or an
 organizationally independent audit. Fresh Inspector observations remain a
 separate integration task.
+
+## Memory-only ingress refusal evidence
+
+The grouped ingress controls pair one positive calibration with bare JSON-RPC, unsigned legacy, unsigned HTTP/1.1 gRPC-media and h2-only ALPN inputs. Every refused input stays in `_test.go` over owned `net.Pipe` TLS; there is no packet CLI or OS listener for these controls. Existing normal loopback runtime scenarios remain separate.
+
+Observations bind actual server/completion identities, configured target and fixture Source service. TLS uses its explicit `localhost` fixture certificate over the memory pipe; the configured HTTP authority remains `agents.example.com`. This is not proof of a deployed endpoint or alternate gRPC/legacy listener. The h2 control requires the pinned toolchain's no-application-protocol alert, with a live context, rather than treating a timeout or arbitrary handshake error as successful refusal.
+
+Each control starts with an actual pending response context. The positive path must reach the inert Handler and authenticate the exact response; refused paths must record zero effects/accepted requests/accepted responses. Actual cleartext failure framing and unsuccessful response admission are recorded. No parser or OpenRequest callback is exposed by connection handling, so their trace remains NOT_OBSERVED; failed h2 negotiation is NOT_REACHED. Three separate fresh-fixture direct parser/core calibrations are explicitly distinguished from these connection traces.
+
+The evidence parser reconstructs split Go output per exact test leaf and checks typed raw frame hashes, source/role/URL facts, counters, actual verified payload, interface negotiation, calibration scopes and failure framing. Both full and focused test runs must independently provide all five witnesses. These are bounded memory-unit observations, not whole conformance, operating Registry/custody/host assurance, or closure of the historical Inspector production-ingress unsupported cases.
+
+Positive raw request and response envelopes are checked for exact fixture DID/key roles and versions, content digests, profile signature framing, context/session equality and request identifier/hash correlation. These are bounded structural and byte-consistency checks; actual signature authentication and plaintext acceptance are observed through the real core calls. The synthetic parser fixtures contain deliberately invalid cryptographic material and establish no runtime result.
