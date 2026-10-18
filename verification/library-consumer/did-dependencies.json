@@ -1,7 +1,7 @@
 {
   "github.com/sage-x-project/sage": {
-    "Version": "v1.5.3-0.20261018151911-5035088faa8e",
-    "Sum": "h1:wl6qVEeeE3ZNoL/jaVhrbK3Ik8pjYBGROD4iDKAM+uU=",
+    "Version": "v1.5.3-0.20261018185120-26baeb0b67ed",
+    "Sum": "h1:rhpclsqCjPecuHkUM3KYLTeg4fds6Aub9LGw3oWxjMw=",
     "GoModSum": "h1:gVxxsTLKs1SVc/BFU9iAKhUvMidQ6qZr44y3JF3fLCU="
   },
   "github.com/sage-x-project/did-go": {

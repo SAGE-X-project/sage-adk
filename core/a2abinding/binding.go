@@ -16,10 +16,11 @@ import (
 // Its bytes are unchanged JSON-RPC payload; metadata belongs in the signed
 // chapter 08 envelope, never HTTP headers or query parameters.
 type ProtectedCall struct {
-	target    Interface
-	recipient string
-	payload   []byte
-	metadata  map[string]string
+	target     Interface
+	recipient  string
+	payload    []byte
+	metadata   map[string]string
+	revalidate func(context.Context) (*VerifiedCard, error)
 }
 
 // Target returns the exact authenticated eligible HTTPS interface.
@@ -95,22 +96,33 @@ func (c *Client) Call(ctx context.Context, card, rpc []byte) ([]byte, error) {
 	if (selected.Tenant == "" && tenantPresent) || (selected.Tenant != "" && (!tenantPresent || tenant != selected.Tenant)) {
 		return nil, ErrRejected
 	}
-	call := ProtectedCall{selected, verified.did, rpc, map[string]string{"a2a_version": "1.0", "a2a_extensions": ExtensionURI}}
+	// Only this Client creates the private fresh-card callback. It keeps exact
+	// owned card bytes and the original version/interface; it is not serialized.
+	revalidate := func(checkCtx context.Context) (*VerifiedCard, error) {
+		if checkCtx == nil || checkCtx.Err() != nil || ctx.Err() != nil {
+			return nil, ErrRejected
+		}
+		current, e := c.verifier.Verify(checkCtx, card)
+		if e != nil || current.did != verified.did || current.version != verified.version {
+			return nil, ErrRejected
+		}
+		found := false
+		for _, in := range current.interfaces {
+			found = found || in == selected
+		}
+		if !found || checkCtx.Err() != nil || ctx.Err() != nil {
+			return nil, ErrRejected
+		}
+		return current, nil
+	}
+	call := ProtectedCall{target: selected, recipient: verified.did, payload: rpc, metadata: map[string]string{"a2a_version": "1.0", "a2a_extensions": ExtensionURI}, revalidate: revalidate}
 	var attempted, admitted, invalid atomic.Bool
 	finalCheck := func(checkCtx context.Context) error {
 		if checkCtx == nil || checkCtx.Err() != nil || !attempted.CompareAndSwap(false, true) {
 			invalid.Store(true)
 			return ErrRejected
 		}
-		current, e := c.verifier.Verify(ctx, card)
-		if e != nil || current.did != verified.did || current.version != verified.version {
-			return ErrRejected
-		}
-		found := false
-		for _, in := range current.interfaces {
-			found = found || in == selected
-		}
-		if !found {
+		if _, e := revalidate(checkCtx); e != nil {
 			return ErrRejected
 		}
 		if checkCtx.Err() != nil {
@@ -178,6 +190,15 @@ func NewServer(c ServerConfig) (*Server, error) {
 // A2A unsupported methods return an error object inside a successful protected
 // transport response, not a SAGE transport error or application dispatch.
 func (s *Server) Handle(ctx context.Context, in AuthenticatedRequest) ([]byte, error) {
+	return s.handle(ctx, in, nil)
+}
+
+// The concrete ingress alone can surround the complete final verification round.
+// The callback must invoke verify exactly once before its final local stamp.
+// No endpoint lock is held while invoking verifier or Handler dependencies.
+type finalHTTPDispatch func(context.Context, func() (*VerifiedCard, error)) error
+
+func (s *Server) handle(ctx context.Context, in AuthenticatedRequest, final finalHTTPDispatch) ([]byte, error) {
 	if s == nil || ctx == nil || ctx.Err() != nil || in.Recipient != s.cfg.DID || in.URL != s.cfg.URL || !validMetadata(in.Metadata) {
 		return nil, ErrRejected
 	}
@@ -190,6 +211,7 @@ func (s *Server) Handle(ctx context.Context, in AuthenticatedRequest) ([]byte, e
 	if e != nil {
 		return nil, ErrRejected
 	}
+	raw = append([]byte(nil), raw...)
 	card, e := s.cfg.Verifier.Verify(ctx, raw)
 	if e != nil || card.did != s.cfg.DID {
 		return nil, ErrRejected
@@ -241,9 +263,27 @@ func (s *Server) Handle(ctx context.Context, in AuthenticatedRequest) ([]byte, e
 			return rpcError(request["id"], -32003, "Push notification not supported")
 		}
 	}
-	// Routing can block; revalidate card/record again immediately before dispatch.
-	current, e := s.cfg.Verifier.Verify(ctx, raw)
-	if e != nil || current.did != card.did || current.version != card.version || ctx.Err() != nil {
+	// The concrete ingress starts its final-round budget before this Verify.
+	attempts := 0
+	verified := false
+	verify := func() (*VerifiedCard, error) {
+		attempts++
+		if attempts != 1 {
+			verified = false
+			return nil, ErrRejected
+		}
+		current, e := s.cfg.Verifier.Verify(ctx, raw)
+		if e != nil || current.did != card.did || current.version != card.version || ctx.Err() != nil {
+			return nil, ErrRejected
+		}
+		verified = true
+		return current, nil
+	}
+	if final != nil {
+		if final(ctx, verify) != nil || attempts != 1 || !verified {
+			return nil, ErrRejected
+		}
+	} else if _, e := verify(); e != nil {
 		return nil, ErrRejected
 	}
 	response, e := s.cfg.Handler.Handle(ctx, payload)
