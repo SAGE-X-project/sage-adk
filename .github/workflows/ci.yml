@@ -67,6 +67,41 @@ jobs:
           go mod tidy
           git diff --exit-code -- go.mod go.sum
           go test -mod=readonly -race -timeout 1m ./...
+      - name: Retain public DID consumer evidence
+        working-directory: verification/library-consumer
+        shell: bash
+        env:
+          GOWORK: 'off'
+        run: |
+          evidence="$RUNNER_TEMP/did-consumer"
+          mkdir -p "$evidence"
+          go version > "$evidence/go-version.txt"
+          go list -m -json github.com/sage-x-project/sage github.com/sage-x-project/did-go github.com/sage-x-project/did-go/advanced/sage > "$evidence/modules.json"
+          python3 - <<'PYMODULES'
+          import json, os
+          from pathlib import Path
+          data = Path(os.environ['RUNNER_TEMP'], 'did-consumer/modules.json').read_text()
+          decoder = json.JSONDecoder()
+          selected = {}
+          while data.strip():
+              module, end = decoder.raw_decode(data.lstrip())
+              data = data.lstrip()[end:]
+              assert module['Path'] not in selected and not module.get('Replace')
+              selected[module['Path']] = {key: module[key] for key in ('Version', 'Sum', 'GoModSum')}
+          assert selected == json.loads(Path('did-dependencies.json').read_text())
+          PYMODULES
+          go mod verify > "$evidence/modules-verified.txt"
+          go test -mod=readonly -race -count=1 -timeout 2m -json -run '^TestAdoptedDID' ./... | tee "$evidence/tests.jsonl"
+          git diff --exit-code -- go.mod go.sum
+      - name: Upload public DID consumer evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: did-consumer-${{ matrix.os }}
+          path: ${{ runner.temp }}/did-consumer/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: CLI smoke check
         run: |
           go build -mod=readonly -o "$RUNNER_TEMP/sage-adk" ./cmd/adk
