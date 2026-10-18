@@ -1,9 +1,14 @@
 package a2abinding
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
+	"github.com/sage-x-project/sage/pkg/agent/hpke"
+	"io"
 	"net"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -148,4 +153,119 @@ func TestProtectedHTTPConstructionAndClosure010(t *testing.T) {
 		t.Fatal("nil ingress accepted")
 	}
 	ingress.Close()
+}
+
+// These refusal controls use only in-memory listeners/connections. They never
+// emit malformed traffic or substitute for the real TLS runtime scenarios.
+type protectedMemoryListener struct{ accepts, closes int }
+
+func (l *protectedMemoryListener) Accept() (net.Conn, error) { l.accepts++; return nil, ErrRejected }
+func (l *protectedMemoryListener) Close() error              { l.closes++; return nil }
+func (l *protectedMemoryListener) Addr() net.Addr            { return &net.TCPAddr{} }
+
+type protectedDeadlineConn struct{ protectedMemoryConn }
+
+func (c *protectedDeadlineConn) SetDeadline(time.Time) error { return ErrRejected }
+
+type protectedCapturedConn struct {
+	protectedMemoryConn
+	body bytes.Buffer
+}
+
+func (c *protectedCapturedConn) Write(p []byte) (int, error) { c.writes.Add(1); return c.body.Write(p) }
+
+func TestProtectedHTTPLocalIngressRefusals010(t *testing.T) {
+	for _, mode := range []string{"consumed-session", "wrong-local"} {
+		t.Run(mode, func(t *testing.T) {
+			pair := protectedSessions(t, endpoint, true)
+			local := peer
+			if mode == "wrong-local" {
+				local = protectedAlice
+			} else {
+				pair.right.Close()
+			}
+			server, e := NewServer(ServerConfig{DID: local, URL: endpoint, Verifier: pair.verifier(t), Card: func(context.Context) ([]byte, error) { return nil, ErrRejected }, Handler: handlerFunc(func(context.Context, []byte) ([]byte, error) {
+				t.Error("refused assembly reached Handler")
+				return nil, ErrRejected
+			})})
+			if e != nil {
+				t.Fatal(e)
+			}
+			cert, _ := protectedCertificate(t)
+			ingress, e := NewHTTPIngress(HTTPIngressConfig{Transport: HTTPTransportConfig{Session: pair.right, URL: endpoint, TLS: &tls.Config{Certificates: []tls.Certificate{cert}}, TTL: 30, Timeout: time.Second}, Server: server})
+			if e != ErrRejected || ingress != nil {
+				t.Fatal("consumed or wrong-local session accepted", e)
+			}
+			if owner, e := pair.right.TakeHTTPApplication(endpoint); e == nil || owner != nil {
+				t.Fatal("refused transferred session was reusable")
+			}
+		})
+	}
+	for _, mode := range []string{"already-serving", "closed"} {
+		t.Run(mode, func(t *testing.T) {
+			state := &protectedIngressState{transport: &protectedHTTPState{}}
+			if mode == "already-serving" {
+				state.serving.Store(true)
+			} else {
+				state.transport.closing.Store(true)
+			}
+			listener := &protectedMemoryListener{}
+			if (&HTTPIngress{state: state}).ServeTLS(context.Background(), listener) != ErrRejected || listener.accepts != 0 {
+				t.Fatal("invalid serving state accepted a connection")
+			}
+			wantClosed := 0
+			if mode == "closed" {
+				wantClosed = 1
+			}
+			if listener.closes != wantClosed {
+				t.Fatal("listener ownership did not follow admission", listener.closes)
+			}
+		})
+	}
+	for _, mode := range []string{"closed-connection", "canceled-connection", "deadline-error"} {
+		t.Run(mode, func(t *testing.T) {
+			state := &protectedIngressState{transport: &protectedHTTPState{timeout: time.Second}}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			conn := &protectedDeadlineConn{}
+			if mode == "closed-connection" {
+				state.transport.closing.Store(true)
+			}
+			if mode == "canceled-connection" {
+				cancel()
+			}
+			state.connection(ctx, conn)
+			if conn.closes.Load() != 1 || conn.writes.Load() != 0 || state.transport.conn != nil {
+				t.Fatal("refused connection leaked or wrote application bytes")
+			}
+		})
+	}
+	t.Run("empty-response", func(t *testing.T) {
+		if frame, e := protectedResponseFrame(hpke.HTTPMessage010{Status: http.StatusOK}); e != ErrRejected || frame != nil {
+			t.Fatal("empty response accepted")
+		}
+	})
+	for _, status := range []int{http.StatusBadRequest, http.StatusOK} {
+		name := "unsigned-bad-request"
+		if status == http.StatusOK {
+			name = "unsigned-unauthorized"
+		}
+		t.Run(name, func(t *testing.T) {
+			conn := &protectedCapturedConn{}
+			protectedAuthenticationFailure(conn, status)
+			response, e := http.ReadResponse(bufio.NewReader(&conn.body), nil)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer func() { _ = response.Body.Close() }()
+			want := http.StatusUnauthorized
+			if status == http.StatusBadRequest {
+				want = status
+			}
+			body, e := io.ReadAll(response.Body)
+			if e != nil || response.StatusCode != want || !response.Close || string(body) != "authentication failed\n" || conn.writes.Load() != 1 {
+				t.Fatal("generic refusal became a result or retry", e, response.StatusCode, string(body))
+			}
+		})
+	}
 }

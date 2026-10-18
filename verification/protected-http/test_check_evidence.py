@@ -30,7 +30,7 @@ class EvidenceTests(unittest.TestCase):
     def test_complete_harness_and_marker_contract(self):
         rows = good_rows()
         result = check.check_tests(rows, rows)
-        self.assertEqual((result["suites"], result["leaf_tests"], result["owned_tls_scenarios"]), (9, 117, 22))
+        self.assertEqual((result["suites"], result["leaf_tests"], result["owned_tls_scenarios"]), (10, 127, 22))
 
     def test_missing_duplicate_or_false_observations(self):
         rows = good_rows()
@@ -125,7 +125,7 @@ class EvidenceTests(unittest.TestCase):
                     (out / name).write_text("mode: atomic\nf/http_transport.go:1.1,2.1 10 1\nf/http_ingress.go:1.1,2.1 10 1\n")
                 with contextlib.redirect_stdout(io.StringIO()):
                     check.main("tests", out)
-                self.assertEqual(json.loads((out / "summary.json").read_text())["leaf_tests"], 117)
+                self.assertEqual(json.loads((out / "summary.json").read_text())["leaf_tests"], 127)
                 with self.assertRaises(ValueError):
                     check.main("invalid", out)
             finally:
