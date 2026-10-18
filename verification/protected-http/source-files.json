@@ -11,6 +11,7 @@
   "core/a2abinding/http_fixture_test.go",
   "core/a2abinding/http_framing_test.go",
   "core/a2abinding/http_ingress.go",
+  "core/a2abinding/http_ingress_evidence_test.go",
   "core/a2abinding/http_runtime_test.go",
   "core/a2abinding/http_transport.go",
   "core/a2abinding/json.go",
