@@ -7,7 +7,7 @@ toolchain go1.26.8
 // Utilities
 require (
 	github.com/google/uuid v1.6.0
-	github.com/sage-x-project/sage v1.5.3-0.20261018151911-5035088faa8e
+	github.com/sage-x-project/sage v1.5.3-0.20261018185120-26baeb0b67ed
 	trpc.group/trpc-go/trpc-a2a-go v0.2.2
 )
 

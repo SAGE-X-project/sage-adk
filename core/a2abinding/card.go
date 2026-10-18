@@ -58,6 +58,18 @@ type VerifiedCard struct {
 	did, version  string
 	interfaces    []Interface
 	otherRequired []string
+	bounds        cardBounds
+}
+
+// Private retained bounds come only from successful local card verification.
+// They are data for the adapter's last same-clock check, never an effect permit.
+type cardBounds struct {
+	issued, expires, keyExpires int64
+	keyHasExpiry                bool
+}
+
+func (b cardBounds) live(unix int64) bool {
+	return b.issued <= unix && unix < b.expires && (!b.keyHasExpiry || unix < b.keyExpires)
 }
 
 // JSON returns an owned copy of the normalized, verified card consumers may expose.
@@ -321,7 +333,12 @@ func (v *Verifier) Verify(ctx context.Context, raw []byte) (*VerifiedCard, error
 			required = append(required, text(ext, "uri"))
 		}
 	}
-	return &VerifiedCard{raw: data, did: did, version: r.Version, interfaces: eligible, otherRequired: required}, nil
+	bounds := cardBounds{issued: issued, expires: expires}
+	if signing.Expires != nil {
+		bounds.keyHasExpiry = true
+		bounds.keyExpires = *signing.Expires
+	}
+	return &VerifiedCard{raw: data, did: did, version: r.Version, interfaces: eligible, otherRequired: required, bounds: bounds}, nil
 }
 
 func parsePeer(s string) (sagedid.DID010, error) { return sagedid.ParseDID010(s) }
