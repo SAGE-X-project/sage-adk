@@ -19,6 +19,7 @@ package sage
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"time"
@@ -322,11 +323,12 @@ func (sm *SigningManager) VerifyMessageRFC9421(
 	return nil
 }
 
-// generateNonce generates a random nonce for replay protection.
+// generateNonce returns 16 random bytes as unpadded base64url. The previous
+// timestamp conversion through rune produced almost always the same value.
 func generateNonce() string {
-	// Use timestamp + random component
-	timestamp := time.Now().UnixNano()
-	return base64.StdEncoding.EncodeToString([]byte(
-		base64.StdEncoding.EncodeToString([]byte(string(rune(timestamp)))),
-	))
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic("sage: crypto/rand unavailable: " + err.Error())
+	}
+	return base64.RawURLEncoding.EncodeToString(b[:])
 }

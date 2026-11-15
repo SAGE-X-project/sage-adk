@@ -232,16 +232,10 @@ func (a *Adapter) Verify(ctx context.Context, msg *types.Message) error {
 			WithDetail("error", err.Error())
 	}
 
-	// 5. Verify nonce (prevent replay attacks)
-	if err := a.nonceCache.Check(msg.Security.Nonce); err != nil {
-		return errors.ErrInvalidValue.
-			WithMessage("nonce validation failed - possible replay attack").
-			WithDetail("nonce", msg.Security.Nonce).
-			WithDetail("error", err.Error())
-	}
-
-	// 6. Verify signature if present
-	if msg.Security.Signature != nil {
+	// 5. Verify the signature. SAGE mode always requires one (Validate above);
+	// the nonce is recorded only after the signature verifies, so a forged
+	// message cannot consume another sender's nonce.
+	{
 		// Resolve DID to get public key
 		if a.didResolver == nil {
 			return errors.ErrOperationFailed.
@@ -277,6 +271,14 @@ func (a *Adapter) Verify(ctx context.Context, msg *types.Message) error {
 				WithMessage("signature verification failed").
 				WithDetail("error", err.Error())
 		}
+	}
+
+	// 6. Verify nonce (prevent replay attacks)
+	if err := a.nonceCache.Check(msg.Security.Nonce); err != nil {
+		return errors.ErrInvalidValue.
+			WithMessage("nonce validation failed - possible replay attack").
+			WithDetail("nonce", msg.Security.Nonce).
+			WithDetail("error", err.Error())
 	}
 
 	return nil

@@ -123,6 +123,10 @@ func (s *SecurityMetadata) Validate() error {
 		if s.Timestamp.IsZero() {
 			return fmt.Errorf("Timestamp required for SAGE mode")
 		}
+		// A SAGE message is never accepted unsigned.
+		if s.Signature == nil {
+			return fmt.Errorf("Signature required for SAGE mode")
+		}
 	}
 
 	// Validate signature if present
