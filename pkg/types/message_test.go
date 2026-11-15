@@ -292,6 +292,12 @@ func TestMessage_Validate(t *testing.T) {
 					AgentDID:  "did:sage:eth:0x123",
 					Nonce:     "nonce-789",
 					Timestamp: time.Now(),
+					Signature: &SignatureData{
+						Algorithm:    AlgorithmEdDSA,
+						KeyID:        "did:sage:eth:0x123#key-1",
+						Signature:    []byte("signature"),
+						SignedFields: []string{"messageId"},
+					},
 				},
 			},
 			wantErr: false,

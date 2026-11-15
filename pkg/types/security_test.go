@@ -161,7 +161,7 @@ func TestSecurityMetadata_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "valid SAGE mode",
+			name: "SAGE mode without signature",
 			sec: &SecurityMetadata{
 				Mode:      ProtocolModeSAGE,
 				AgentDID:  "did:sage:eth:0x123",
@@ -169,7 +169,7 @@ func TestSecurityMetadata_Validate(t *testing.T) {
 				Timestamp: now,
 				Sequence:  1,
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "valid SAGE with signature",

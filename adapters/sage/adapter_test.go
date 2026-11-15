@@ -309,18 +309,21 @@ func TestAdapter_Verify_ValidSecurityMetadata(t *testing.T) {
 		[]types.Part{types.NewTextPart("test")},
 	)
 
-	// Set valid security metadata (no signature)
+	// A SAGE message without a signature is refused, and its nonce is not
+	// consumed, so the real sender can still use it.
 	msg.Security = &types.SecurityMetadata{
 		Mode:      types.ProtocolModeSAGE,
 		AgentDID:  "did:sage:eth:0xABC",
 		Nonce:     "test_nonce_valid",
 		Timestamp: time.Now(),
-		Signature: nil, // No signature to verify
+		Signature: nil,
 	}
 
-	err := adapter.Verify(context.Background(), msg)
-	if err != nil {
-		t.Errorf("Verify() should succeed with valid security metadata: %v", err)
+	if err := adapter.Verify(context.Background(), msg); err == nil {
+		t.Error("Verify() accepted a SAGE message without a signature")
+	}
+	if err := adapter.nonceCache.Check("test_nonce_valid"); err != nil {
+		t.Errorf("refused message consumed the nonce: %v", err)
 	}
 }
 
